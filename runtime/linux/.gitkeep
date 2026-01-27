@@ -1,0 +1,3 @@
+# Place node-linux64 here
+# Download from: https://nodejs.org/dist/v20.18.0/node-v20.18.0-linux-x64.tar.xz
+# Extract node binary and rename to node-linux64

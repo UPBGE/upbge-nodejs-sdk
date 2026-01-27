@@ -1,0 +1,15 @@
+# This directory will contain Node.js executables for different platforms
+# 
+# Structure:
+#   runtime/
+#     windows/
+#       node.exe
+#     linux/
+#       node-linux64
+#     macos/
+#       node-osx
+#
+# To download Node.js:
+# 1. Visit https://nodejs.org/
+# 2. Download LTS version (v20.x or v22.x)
+# 3. Extract node.exe (Windows) or node binary (Linux/macOS) to the appropriate platform folder

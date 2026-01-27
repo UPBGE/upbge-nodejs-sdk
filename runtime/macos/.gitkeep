@@ -1,0 +1,3 @@
+# Place node-osx here
+# Download from: https://nodejs.org/dist/v20.18.0/node-v20.18.0-darwin-x64.tar.gz
+# Extract node binary and rename to node-osx

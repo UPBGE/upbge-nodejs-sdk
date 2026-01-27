@@ -1,0 +1,40 @@
+# Dependências binárias (não versionar no Git, mas incluídas no pacote de distribuição)
+# Nota: Os binários são ignorados no Git para reduzir o tamanho do repositório,
+# mas são incluídos no ZIP de distribuição gerado por scripts/build_package.py
+runtime/windows/node.exe
+runtime/linux/node-linux64
+runtime/macos/node-osx
+lib/typescript/tsc
+lib/typescript/tsc.exe
+lib/lsp/typescript-language-server
+lib/lsp/typescript-language-server.cmd
+lib/lsp/cli.mjs
+
+# Arquivos temporários
+temp_*
+*.zip
+*.tar.gz
+*.tar.xz
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+node_modules/
+.cursor/rules/
