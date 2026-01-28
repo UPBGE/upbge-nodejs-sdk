@@ -50,31 +50,20 @@
 **Verificações:**
 1. Certifique-se de que está no **Logic Editor**
 2. No painel lateral, role até encontrar a aba **"Logic"**
-3. Procure pelo painel **"JavaScript/TypeScript"**
+3. Procure pelo painel **"JavaScript"**
 
 **Se não aparecer:**
 - Verifique se há erros no console do Blender
 - Verifique se o módulo `ui` está sendo registrado
 
-#### 5. Painel no Text Editor não aparece
+#### 5. Controller ainda executa como Python
 
-**Verificações:**
-1. Abra um arquivo `.ts` ou `.js` no Text Editor
-2. No painel lateral, vá para a aba **"Text"**
-3. Procure pelo painel **"JavaScript/TypeScript"**
-
-**Se não aparecer:**
-- O painel só aparece quando um arquivo `.ts` ou `.js` está aberto
-- Verifique se o arquivo tem a extensão correta
-
-#### 6. Controller ainda executa como Python
-
-**Sintoma:** Ao pressionar 'P', o erro mostra que Python está tentando executar o arquivo `.ts`
+**Sintoma:** Ao pressionar 'P', o erro mostra que Python está tentando executar o arquivo `.js`
 
 **Solução:**
-1. No Logic Editor, vá para o painel "JavaScript/TypeScript"
-2. Encontre o controller que tem o arquivo `.ts/.js`
-3. Clique no botão **"Setup for TypeScript"** ou **"Setup for JavaScript"**
+1. No Logic Editor, vá para o painel "JavaScript"
+2. Encontre o controller que tem o arquivo `.js`
+3. Clique no botão **"Setup for JavaScript"**
 4. Isso criará o wrapper Python que intercepta a execução
 
 **Importante:** O wrapper precisa ser configurado manualmente após atribuir o arquivo ao controller.
@@ -88,8 +77,7 @@ Após instalar o add-on, verifique:
 - [ ] Console mostra "Running UPBGE JavaScript SDK from ..."
 - [ ] Menu "Languages" no console mostra "JavaScript" e "TypeScript"
 - [ ] Painel "JavaScript/TypeScript" aparece no Logic Editor
-- [ ] Painel "JavaScript/TypeScript" aparece no Text Editor quando arquivo `.ts/.js` está aberto
-- [ ] Controllers foram configurados com "Setup" após atribuir arquivos `.ts/.js`
+- [ ] Controllers foram configurados com "Setup" após atribuir arquivos `.js`
 
 ## Erros Comuns
 
@@ -114,7 +102,7 @@ Após instalar o add-on, verifique:
 
 **Solução:**
 1. Execute `python scripts/download_dependencies.py` para baixar Node.js
-2. Execute `python scripts/setup_sdk.py` para instalar TypeScript e LSP
+2. Execute `python scripts/setup_sdk.py` para configurar a estrutura do SDK
 3. Recarregue o add-on
 
 ## Logs de Debug
@@ -128,5 +116,5 @@ Para ver logs detalhados:
 
 Se nada funcionar após seguir este guia:
 1. Verifique o console do Blender para erros específicos
-2. Certifique-se de que todos os binários estão instalados (Node.js, TypeScript, LSP)
+2. Certifique-se de que todos os binários essenciais estão instalados (Node.js)
 3. Tente recarregar o add-on completamente (desative, feche Blender, reabra, ative)

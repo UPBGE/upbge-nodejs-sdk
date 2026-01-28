@@ -1,7 +1,7 @@
 {
   "name": "upbge-nodejs-sdk",
   "version": "1.0.0",
-  "description": "SDK completo para suporte JavaScript/TypeScript no UPBGE Game Engine, totalmente independente do core do UPBGE.",
+  "description": "SDK completo para suporte JavaScript no UPBGE Game Engine, totalmente independente do core do UPBGE.",
   "types": "types/index.d.ts",
   "files": ["types/**/*"],
   "scripts": {

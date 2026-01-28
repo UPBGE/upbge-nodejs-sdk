@@ -4,11 +4,6 @@
 runtime/windows/node.exe
 runtime/linux/node-linux64
 runtime/macos/node-osx
-lib/typescript/tsc
-lib/typescript/tsc.exe
-lib/lsp/typescript-language-server
-lib/lsp/typescript-language-server.cmd
-lib/lsp/cli.mjs
 
 # Arquivos temporários
 temp_*

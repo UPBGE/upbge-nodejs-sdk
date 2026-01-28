@@ -1,16 +1,15 @@
-# UPBGE JavaScript/TypeScript SDK
+# UPBGE JavaScript SDK
 
-SDK completo para suporte JavaScript/TypeScript no UPBGE Game Engine, totalmente independente do core do UPBGE.
+SDK completo para suporte JavaScript no UPBGE Game Engine, totalmente independente do core do UPBGE.
 
 ## Visão Geral
 
-Este SDK fornece suporte completo para desenvolvimento JavaScript/TypeScript no UPBGE, incluindo:
+Este SDK fornece suporte para desenvolvimento JavaScript no UPBGE, incluindo:
 
-- **Console Interativo**: Console JavaScript e TypeScript para testar código rapidamente
+- **Console Interativo**: Console JavaScript para testar código rapidamente
 - **Integração com Editor Externo**: Abertura rápida do SDK/projeto em VS Code, Cursor ou editor personalizado
-- **Compilação TypeScript**: Compilação automática de TypeScript para JavaScript
-- **Type Definitions**: Definições de tipos TypeScript para a API do BGE
-- **Game Engine Integration**: Integração com controllers JavaScript/TypeScript no game engine
+- **Type Definitions**: Definições de tipos em `types/` para uso opcional em editores que suportam TypeScript
+- **Game Engine Integration**: Integração com controllers JavaScript no game engine
 
 ## Instalação
 
@@ -23,17 +22,16 @@ Este SDK fornece suporte completo para desenvolvimento JavaScript/TypeScript no 
 Se você está desenvolvendo ou contribuindo para o SDK, você precisará instalar as dependências manualmente:
 
 1. **Estrutura de Diretórios**: Execute `python scripts/setup_sdk.py`
-2. **Node.js**: Execute `python scripts/download_dependencies.py` ou instale manualmente (veja `INSTALL_DEPENDENCIES.md`)
-3. **TypeScript e LSP**: Execute `python scripts/setup_sdk.py` (instala automaticamente) ou instale manualmente (veja `INSTALL_DEPENDENCIES.md`)
+2. **Node.js**: Execute `python scripts/download_dependencies.py` ou instale manualmente (veja `INSTALL_DEPENDENCIES.md` se necessário)
 
 ### Opção 1: Instalação Manual
 
 1. Clone ou baixe este repositório
 2. Execute `python scripts/setup_sdk.py` para criar estrutura de diretórios
-3. Instale dependências (Node.js, TypeScript, LSP) - veja `INSTALL_DEPENDENCIES.md`
+3. Instale dependências (Node.js) - veja `INSTALL_DEPENDENCIES.md` apenas se quiser instalar ferramentas extras
 4. No Blender, vá em **Edit → Preferences → Add-ons**
 5. Clique em **Install...** e selecione a pasta `upbge-javascript`
-6. Ative o add-on "UPBGE JavaScript/TypeScript SDK"
+6. Ative o add-on "UPBGE JavaScript SDK"
 7. Configure o caminho do SDK nas preferências do add-on
 
 ### Opção 2: Instalação via Add-on (ZIP) - Recomendado
@@ -41,15 +39,15 @@ Se você está desenvolvendo ou contribuindo para o SDK, você precisará instal
 1. **Baixe o pacote oficial** `upbge-javascript-sdk-X.X.X.zip` (inclui todos os binários)
 2. No Blender/UPBGE, vá em **Edit → Preferences → Add-ons**
 3. Clique em **Install...** e selecione o arquivo ZIP baixado
-4. Ative o add-on "UPBGE JavaScript/TypeScript SDK"
-5. **Pronto!** O SDK está funcionando (plug-and-play, sem necessidade de instalar dependências)
+4. Ative o add-on "UPBGE JavaScript SDK"
+5. **Pronto!** O SDK está funcionando (plug-and-play, sem necessidade de instalar dependências extras)
 
 **Nota para Desenvolvedores**: Para criar um pacote de distribuição com todos os binários incluídos, execute:
 ```bash
 python scripts/build_package.py
 ```
 
-Isso criará um arquivo ZIP pronto para distribuição, incluindo Node.js, TypeScript e TypeScript Language Server.
+Isso criará um arquivo ZIP pronto para distribuição, incluindo o add-on e o runtime Node.js.
 
 ### Guia Rápido
 
@@ -78,27 +76,24 @@ O SDK pode ser configurado de três formas (em ordem de prioridade):
 upbge-javascript/
 ├── __init__.py              # Add-on principal
 ├── python/                   # Módulos Python
-│   ├── console/             # Consoles JavaScript/TypeScript
-│   ├── editor/              # (Legado) módulos de integração com o Text Editor interno
+│   ├── console/             # Console JavaScript
 │   ├── runtime/             # Runtime JavaScript (Node.js wrapper)
 │   └── game_engine/         # Integração com game engine
 ├── runtime/                  # Node.js executáveis
 │   ├── windows/
 │   ├── linux/
 │   └── macos/
-├── lib/                      # Bibliotecas e ferramentas
-│   ├── typescript/          # TypeScript compiler
-│   └── lsp/                 # Language Server Protocol
-└── types/                    # Type definitions TypeScript
+├── lib/                      # (Opcional) bibliotecas e ferramentas adicionais
+└── types/                    # Type definitions para uso em editores
     └── bge.d.ts
 ```
 
 ## Uso
 
-### Console JavaScript/TypeScript
+### Console JavaScript
 
 1. Abra o **Console** no Blender (Window → Toggle System Console ou Shift+F4)
-2. No menu de linguagem do console, selecione **JavaScript** ou **TypeScript**
+2. No menu de linguagem do console, selecione **JavaScript**
 3. Digite código e pressione Enter para executar
 
 **Exemplo JavaScript:**
@@ -109,20 +104,11 @@ Hello, UPBGE!
 30
 ```
 
-**Exemplo TypeScript:**
-```typescript
->>> interface Point { x: number; y: number; }
->>> let p: Point = { x: 10, y: 20 }
-{ x: 10, y: 20 }
-```
-
-### Controllers JavaScript/TypeScript
+### Controllers JavaScript
 
 1. No **Logic Editor**, adicione um **JavaScript Controller**
-2. Selecione o controller e configure:
-   - **Script Text**: Código JavaScript/TypeScript
-   - **Use TypeScript**: Marque se o código é TypeScript
-3. O código será compilado e executado no game engine
+2. Selecione o controller e configure um script JavaScript usando o painel do add-on
+3. O código será executado no game engine via Node.js
 
 **Exemplo Controller:**
 ```javascript
@@ -133,41 +119,21 @@ if (obj) {
 }
 ```
 
-### Type Definitions
+### Type Definitions (opcional)
 
-Para usar as type definitions TypeScript em seu projeto:
-
-1. Instale o TypeScript: `npm install -g typescript`
-2. Configure `tsconfig.json`:
-```json
-{
-  "compilerOptions": {
-    "types": ["./upbge-javascript/types"]
-  }
-}
-```
-
-3. Importe os tipos:
-```typescript
-/// <reference path="./upbge-javascript/types/bge.d.ts" />
-
-let scene = bge.logic.getCurrentScene();
-let obj = scene.getObject("Cube");
-```
+O diretório `types/` contém arquivos `.d.ts` opcionais para quem quiser melhor experiência em editores que suportam TypeScript. Eles não são usados pelo add-on em tempo de execução.
 
 ## Requisitos
 
 - **UPBGE**: Versão 5.0 ou superior
 - **Node.js**: Incluído no SDK (não requer instalação externa)
-- **TypeScript**: Incluído no SDK (não requer instalação externa)
 
 ## Desenvolvimento
 
 ### Estrutura do Código
 
-- `python/console/`: Consoles JavaScript/TypeScript
+- `python/console/`: Console JavaScript
 - `python/runtime/`: Wrapper Node.js para execução
-- `python/editor/`: (Legado) integração com o Text Editor interno – não registrado por padrão
 - `python/game_engine/`: Integração com controllers
 
 ### Contribuindo
@@ -192,6 +158,6 @@ GPL-2.0-or-later (mesma licença do UPBGE)
 ## Notas
 
 - O SDK é totalmente independente do UPBGE core
-- Node.js e TypeScript são incluídos no SDK
+- Node.js é incluído no SDK
 - O SDK pode ser atualizado independentemente do UPBGE
 - Suporte a múltiplas versões do SDK por projeto

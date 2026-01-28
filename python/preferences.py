@@ -55,7 +55,7 @@ class SDKAddonPreferences(AddonPreferences):
         items=[
             ('custom', "Custom", "Use a custom editor executable"),
         ],
-        default='vscode',
+        default='custom',
     )
 
     code_editor_bin: StringProperty(

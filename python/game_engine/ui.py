@@ -63,7 +63,7 @@ class LOGIC_OT_setup_js_ts_controller(Operator):
         controller = game.controllers[self.controller_index]
         
         if assign_wrapper_to_controller(controller):
-            self.report({'INFO'}, "Controller configured for JavaScript/TypeScript execution")
+            self.report({'INFO'}, "Controller configured for JavaScript execution")
         else:
             self.report({'WARNING'}, "Controller setup failed or not needed")
         

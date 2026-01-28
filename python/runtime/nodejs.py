@@ -87,44 +87,6 @@ def get_node_path():
     return None
 
 
-def get_tsc_path():
-    """Get the path to TypeScript compiler from the SDK."""
-    sdk_path = get_sdk_path()
-    if not sdk_path:
-        return None
-    
-    os_type = platform.system()
-    
-    if os_type == "Windows":
-        tsc_path = os.path.join(sdk_path, "lib", "typescript", "tsc.exe")
-    else:
-        tsc_path = os.path.join(sdk_path, "lib", "typescript", "tsc")
-    
-    if os.path.exists(tsc_path):
-        return tsc_path
-    
-    # Fallback: try system tsc
-    if os_type == "Windows":
-        possible_paths = [
-            os.path.join(os.environ.get("ProgramFiles", ""), "nodejs", "tsc.cmd"),
-            os.path.join(os.environ.get("ProgramFiles(x86)", ""), "nodejs", "tsc.cmd"),
-            os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "nodejs", "tsc.cmd"),
-        ]
-        for path in possible_paths:
-            if os.path.exists(path):
-                return path
-    else:
-        # Try system PATH
-        try:
-            result = subprocess.run(["which", "tsc"], capture_output=True, text=True, timeout=1)
-            if result.returncode == 0:
-                return result.stdout.strip()
-        except:
-            pass
-    
-    return None
-
-
 class NodeJSRuntime:
     """Wrapper for executing JavaScript code using Node.js."""
     
