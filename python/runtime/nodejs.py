@@ -35,8 +35,7 @@ def get_sdk_path():
         # Check if this addon directory has SDK structure
         has_sdk_structure = (
             os.path.exists(os.path.join(addon_path, "python")) and
-            os.path.exists(os.path.join(addon_path, "runtime")) and
-            os.path.exists(os.path.join(addon_path, "lib"))
+            os.path.exists(os.path.join(addon_path, "runtime"))
         )
         
         if has_sdk_structure:

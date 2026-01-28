@@ -59,26 +59,37 @@ def get_os():
 
 def detect_sdk_path():
     """Auto-detect the SDK path after SDK installation."""
-    preferences = bpy.context.preferences
-    addon_prefs = preferences.addons["upbge_nodejs_sdk"].preferences
-    if addon_prefs.sdk_path != "":
-        return
+    try:
+        preferences = bpy.context.preferences
+        addon_prefs = preferences.addons["upbge_nodejs_sdk"].preferences
+        if addon_prefs.sdk_path != "":
+            return
+    except:
+        # Context might not be available, try to get preferences differently
+        try:
+            addon_prefs = bpy.context.preferences.addons.get("upbge_nodejs_sdk")
+            if addon_prefs and addon_prefs.preferences.sdk_path != "":
+                return
+        except:
+            pass
 
     # When installed via ZIP, the add-on directory IS the SDK directory
     addon_path = os.path.dirname(os.path.abspath(__file__))
     
-    # Check if this add-on directory has the SDK structure (python/, runtime/, lib/)
-    has_sdk_structure = (
-        os.path.exists(os.path.join(addon_path, "python")) and
-        os.path.exists(os.path.join(addon_path, "runtime")) and
-        os.path.exists(os.path.join(addon_path, "lib"))
-    )
+    # Check if this add-on directory has the SDK structure (python/, runtime/)
+    has_python = os.path.exists(os.path.join(addon_path, "python"))
+    has_runtime = os.path.exists(os.path.join(addon_path, "runtime"))
     
-    if has_sdk_structure:
+    if has_python and has_runtime:
         # This is the SDK itself (installed via ZIP)
-        addon_prefs.sdk_path = addon_path
-        print(f"UPBGE JavaScript SDK: Auto-detected SDK path: {addon_path}")
-        return
+        try:
+            preferences = bpy.context.preferences
+            addon_prefs = preferences.addons["upbge_nodejs_sdk"].preferences
+            addon_prefs.sdk_path = addon_path
+            print(f"UPBGE JavaScript SDK: Auto-detected SDK path: {addon_path}")
+            return
+        except Exception as e:
+            print(f"UPBGE JavaScript SDK: Could not set SDK path automatically: {e}")
     
     # Try to detect from addon location (for development)
     possible_paths = [
@@ -91,9 +102,14 @@ def detect_sdk_path():
     for path in possible_paths:
         abs_path = os.path.abspath(path)
         if os.path.exists(abs_path) and os.path.exists(os.path.join(abs_path, "python")):
-            addon_prefs.sdk_path = abs_path
-            print(f"UPBGE JavaScript SDK: Auto-detected SDK path: {abs_path}")
-            return
+            try:
+                preferences = bpy.context.preferences
+                addon_prefs = preferences.addons["upbge_nodejs_sdk"].preferences
+                addon_prefs.sdk_path = abs_path
+                print(f"UPBGE JavaScript SDK: Auto-detected SDK path: {abs_path}")
+                return
+            except Exception as e:
+                print(f"UPBGE JavaScript SDK: Could not set SDK path automatically: {e}")
 
 
 def get_fp():
@@ -149,8 +165,7 @@ def get_sdk_path(context: bpy.context) -> str:
     addon_path = os.path.dirname(os.path.abspath(__file__))
     has_sdk_structure = (
         os.path.exists(os.path.join(addon_path, "python")) and
-        os.path.exists(os.path.join(addon_path, "runtime")) and
-        os.path.exists(os.path.join(addon_path, "lib"))
+        os.path.exists(os.path.join(addon_path, "runtime"))
     )
     
     if has_sdk_structure:
@@ -262,7 +277,21 @@ def on_load_post(context):
 def on_register_post():
     """Handler called after addon registration."""
     try:
+        print("UPBGE JavaScript SDK: Running auto-detection...")
         detect_sdk_path()
+        
+        # Try to get SDK path to verify
+        try:
+            preferences = bpy.context.preferences
+            addon_prefs = preferences.addons["upbge_nodejs_sdk"].preferences
+            if addon_prefs.sdk_path:
+                print(f"UPBGE JavaScript SDK: SDK path is set to: {addon_prefs.sdk_path}")
+            else:
+                print("UPBGE JavaScript SDK: WARNING - SDK path is still empty after auto-detection")
+                print(f"  Add-on path: {os.path.dirname(os.path.abspath(__file__))}")
+        except Exception as e:
+            print(f"UPBGE JavaScript SDK: Could not verify SDK path: {e}")
+        
         restart_sdk(bpy.context)
     except Exception as e:
         print(f"UPBGE JavaScript SDK: Error in on_register_post: {e}")

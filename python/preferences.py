@@ -45,7 +45,7 @@ class SDKAddonPreferences(AddonPreferences):
         subtype="FILE_PATH",
         update=sdk_path_update,
         default="",
-        description="Path to the UPBGE JavaScript SDK directory"
+        description="Path to the add-on directory (where the SDK is installed). Should contain 'python/', 'runtime/', and 'types/' folders. Usually auto-detected when installed via ZIP."
     )
 
     # External editor integration
@@ -89,7 +89,15 @@ class SDKAddonPreferences(AddonPreferences):
             if not sdk_exists:
                 layout.label(text="SDK path does not exist. Please install the SDK.", icon='ERROR')
             else:
-                layout.label(text="SDK found", icon='CHECKMARK')
+                # Validate SDK structure
+                has_python = os.path.exists(os.path.join(self.sdk_path, "python"))
+                has_runtime = os.path.exists(os.path.join(self.sdk_path, "runtime"))
+                
+                if has_python and has_runtime:
+                    layout.label(text="SDK found", icon='CHECKMARK')
+                else:
+                    layout.label(text="SDK path exists but missing required folders (python/, runtime/)", icon='ERROR')
+                    layout.label(text="This should point to the add-on directory, not the UPBGE directory.")
         
         layout.separator()
         
