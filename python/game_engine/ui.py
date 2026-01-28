@@ -47,7 +47,29 @@ class LOGIC_OT_setup_js_ts_controller(Operator):
     controller_index: bpy.props.IntProperty(name="Controller Index", default=-1)
     
     def execute(self, context):
-        import python_wrapper
+        # Import python_wrapper from the same directory
+        import sys
+        import os
+        import importlib.util
+        
+        # Get the directory where this file is located
+        game_engine_dir = os.path.dirname(os.path.abspath(__file__))
+        python_wrapper_path = os.path.join(game_engine_dir, "python_wrapper.py")
+        
+        # Load python_wrapper module if not already loaded
+        module_name = "game_engine.python_wrapper"
+        if module_name not in sys.modules:
+            spec = importlib.util.spec_from_file_location(module_name, python_wrapper_path)
+            if spec and spec.loader:
+                python_wrapper = importlib.util.module_from_spec(spec)
+                sys.modules[module_name] = python_wrapper
+                spec.loader.exec_module(python_wrapper)
+            else:
+                self.report({'ERROR'}, f"Could not load python_wrapper module from {python_wrapper_path}")
+                return {'CANCELLED'}
+        else:
+            python_wrapper = sys.modules[module_name]
+        
         assign_wrapper_to_controller = python_wrapper.assign_wrapper_to_controller
         
         ob = context.active_object

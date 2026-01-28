@@ -7,6 +7,8 @@ Python wrapper script that intercepts .js file execution.
 This script should be assigned to Python controllers that have .js files.
 """
 
+import bpy
+
 # This file will be dynamically generated and injected into text blocks
 # when a .js file is assigned to a Python controller
 
