@@ -237,7 +237,304 @@ try {{
             return ("", "Error: JavaScript execution timed out.", False)
         except Exception as e:
             return ("", f"Error executing JavaScript: {str(e)}", False)
-    
+
+    def execute_with_context(self, code, context=None, timeout=10):
+        """
+        Execute JavaScript code using Node.js with BGE bridge context.
+
+        The code is wrapped so that:
+        - A global __BGE_CONTEXT__ object is available in JS.
+        - A global `bge` object is created that queues high-level commands
+          into an array.
+        - At the end, the commands array is printed as a single line starting
+          with the marker '___BGE_CMDS___'.
+
+        Returns (output, error_output, success).
+        """
+        import json
+
+        node_path = self.get_node_path()
+        if not node_path:
+            return ("", "Error: Node.js not found. Please install Node.js or configure SDK path.", False)
+
+        # Prepare context JSON that will be injected into the JS runtime
+        context = context or {}
+        try:
+            context_json = json.dumps(context)
+        except Exception:
+            context_json = "{}"
+
+        try:
+            # Escape the user code for safe embedding inside a JS function body.
+            # Aqui usamos uma função IIFE para executar o código do usuário.
+            # Importante: NÃO escapamos crases/backticks (`) para permitir
+            # o uso de template literals normalmente.
+            user_code = code.replace("\\", "\\\\")
+
+            wrapped_code = f"""
+const __BGE_CONTEXT__ = {context_json} || {{}};
+let __bgeCommands = [];
+function __bgeQueue(cmd) {{
+    __bgeCommands.push(cmd);
+}}
+
+function __bgeQueueForObject(op, objName, extra) {{
+    const ctx = __BGE_CONTEXT__ || {{}};
+    const payload = Object.assign({{
+        op,
+        scene: ctx.scene_name || "",
+        object: objName || ctx.object_name || ""
+    }}, extra || {{}});
+    __bgeQueue(payload);
+}}
+
+function __bgeMakeGameObject(name) {{
+    const ctx = __BGE_CONTEXT__ || {{}};
+    const objName = name || ctx.object_name || "";
+    return {{
+        name: objName,
+        get position() {{
+            if (ctx.object_name === objName && ctx.position && Array.isArray(ctx.position)) {{
+                return ctx.position.slice();
+            }}
+            // Para outros objetos, retornamos um vetor neutro
+            return [0, 0, 0];
+        }},
+        set position(v) {{
+            __bgeQueueForObject("setPosition", objName, {{
+                value: Array.from(v || [0, 0, 0])
+            }});
+        }},
+        applyMovement(vec) {{
+            __bgeQueueForObject("applyMovement", objName, {{
+                vec: Array.from(vec || [0, 0, 0])
+            }});
+        }},
+        getProperty(propName) {{
+            const props = (ctx.properties && ctx.object_name === objName) ? ctx.properties : null;
+            if (props && Object.prototype.hasOwnProperty.call(props, propName)) {{
+                return props[propName];
+            }}
+            return null;
+        }},
+        setProperty(propName, value) {{
+            __bgeQueueForObject("setProperty", objName, {{
+                property: String(propName),
+                value: value
+            }});
+        }},
+        getParent() {{
+            // Não resolvemos hierarquia completa ainda; retornar null é seguro.
+            return null;
+        }},
+        setParent(parent) {{
+            const parentName = parent && parent.name ? parent.name : null;
+            __bgeQueueForObject("setParent", objName, {{
+                parent: parentName
+            }});
+        }},
+        getChildren() {{
+            // Poderíamos expor via contexto no futuro; por enquanto, retornar lista vazia.
+            return [];
+        }},
+    }};
+}}
+
+function __bgeMakeScene(name) {{
+    const ctx = __BGE_CONTEXT__ || {{}};
+    const sceneName = name || ctx.scene_name || "";
+    return {{
+        name: sceneName,
+        active: true,
+        objects: [],
+        getObject(objName) {{
+            return __bgeMakeGameObject(objName);
+        }},
+        addObject(object) {{
+            // Poderemos futuramente enfileirar um comando específico.
+        }},
+        removeObject(object) {{
+            // Idem acima - ainda não implementado.
+        }},
+    }};
+}}
+
+const bge = {{
+    logic: {{
+        getCurrentScene() {{
+            return __bgeMakeScene();
+        }},
+        getSceneList() {{
+            // No momento só trabalhamos com a cena atual.
+            return [__bgeMakeScene()];
+        }},
+        getScene(name) {{
+            return __bgeMakeScene(name);
+        }},
+        getCurrentController() {{
+            const ctx = __BGE_CONTEXT__ || {{}};
+            return {{
+                name: ctx.controller_name || "",
+                type: "PYTHON",
+                active: true,
+                owner: __bgeMakeGameObject()
+            }};
+        }},
+        getCurrentObject() {{
+            return __bgeMakeGameObject();
+        }},
+        // As funções de input ainda não estão conectadas ao engine real;
+        // expomos stubs baseados em contexto para expansão futura.
+        getKeyboardInput() {{
+            const kb = (__BGE_CONTEXT__ && __BGE_CONTEXT__.keyboard) || {{}};
+            return {{
+                isPressed(key) {{
+                    return Array.isArray(kb.pressed) ? kb.pressed.includes(key) : false;
+                }},
+                isJustPressed(key) {{
+                    return Array.isArray(kb.justPressed) ? kb.justPressed.includes(key) : false;
+                }},
+                isJustReleased(key) {{
+                    return Array.isArray(kb.justReleased) ? kb.justReleased.includes(key) : false;
+                }},
+            }};
+        }},
+        getMouseInput() {{
+            const m = (__BGE_CONTEXT__ && __BGE_CONTEXT__.mouse) || {{}};
+            return {{
+                getPosition() {{
+                    return Array.isArray(m.position) ? m.position.slice() : [0, 0];
+                }},
+                isPressed(button) {{
+                    return Array.isArray(m.pressed) ? m.pressed.includes(button) : false;
+                }},
+                isJustPressed(button) {{
+                    return Array.isArray(m.justPressed) ? m.justPressed.includes(button) : false;
+                }},
+                isJustReleased(button) {{
+                    return Array.isArray(m.justReleased) ? m.justReleased.includes(button) : false;
+                }},
+                getWheelDelta() {{
+                    return typeof m.wheelDelta === "number" ? m.wheelDelta : 0;
+                }},
+            }};
+        }},
+        getJoystickInput() {{
+            const j = (__BGE_CONTEXT__ && __BGE_CONTEXT__.joystick) || {{}};
+            return {{
+                getJoystickCount() {{
+                    return typeof j.count === "number" ? j.count : 0;
+                }},
+                isPressed(joystick, button) {{
+                    const pressed = j.buttonsPressed || {{}};
+                    const list = pressed[String(joystick)] || [];
+                    return Array.isArray(list) ? list.includes(button) : false;
+                }},
+                getAxis(joystick, axis) {{
+                    const axes = j.axes || {{}};
+                    const list = axes[String(joystick)] || [];
+                    if (!Array.isArray(list)) return 0;
+                    return typeof list[axis] === "number" ? list[axis] : 0;
+                }},
+            }};
+        }},
+        getGameEngine() {{
+            const e = (__BGE_CONTEXT__ && __BGE_CONTEXT__.engine) || {{}};
+            return {{
+                getFrameRate() {{
+                    return typeof e.frame_rate === "number" ? e.frame_rate : 0;
+                }},
+                getCurrentFrame() {{
+                    return typeof e.current_frame === "number" ? e.current_frame : 0;
+                }},
+                getTimeSinceStart() {{
+                    return typeof e.time_since_start === "number" ? e.time_since_start : 0;
+                }},
+                endGame() {{
+                    __bgeQueue({{ op: "endGame" }});
+                }},
+                restartGame() {{
+                    __bgeQueue({{ op: "restartGame" }});
+                }},
+            }};
+        }},
+    }},
+    types: {{
+        Vector3(x, y, z) {{
+            return {{
+                x: x,
+                y: y,
+                z: z,
+                add(other) {{
+                    return bge.types.Vector3(x + other.x, y + other.y, z + other.z);
+                }},
+                subtract(other) {{
+                    return bge.types.Vector3(x - other.x, y - other.y, z - other.z);
+                }},
+                multiply(scalar) {{
+                    return bge.types.Vector3(x * scalar, y * scalar, z * scalar);
+                }},
+                length() {{
+                    return Math.sqrt(x * x + y * y + z * z);
+                }},
+                normalize() {{
+                    const len = this.length();
+                    if (len === 0) return bge.types.Vector3(0, 0, 0);
+                    return bge.types.Vector3(x / len, y / len, z / len);
+                }},
+            }};
+        }},
+    }},
+}};
+global.bge = bge;
+
+// Execute user code in an IIFE to avoid leaking globals
+(function() {{
+    try {{
+        (function() {{
+            {user_code}
+        }})();
+    }} catch (e) {{
+        console.error(e.toString());
+        if (e.stack) {{
+            console.error(e.stack);
+        }}
+        process.exit(1);
+    }}
+}})();
+
+// After user code finishes, emit the queued commands as a single line
+try {{
+    // Marker used by the Python side to extract commands
+    console.log("___BGE_CMDS___" + JSON.stringify(__bgeCommands));
+}} catch (e) {{
+    console.error("Failed to serialize BGE commands: " + e.toString());
+}}
+"""
+
+            result = subprocess.run(
+                [node_path, "-e", wrapped_code],
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
+
+            output = result.stdout
+            error_output = result.stderr
+
+            if result.returncode != 0:
+                if not error_output:
+                    error_output = output
+                return (output, error_output, False)
+
+            return (output, error_output, True)
+
+        except FileNotFoundError:
+            return ("", "Error: Node.js not found. Please install Node.js or configure SDK path.", False)
+        except subprocess.TimeoutExpired:
+            return ("", "Error: JavaScript execution timed out.", False)
+        except Exception as e:
+            return ("", f"Error executing JavaScript with context: {str(e)}", False)
     def execute_file(self, filepath, timeout=30):
         """
         Execute a JavaScript file using Node.js.

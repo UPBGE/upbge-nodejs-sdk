@@ -19,8 +19,53 @@ import bpy
 import sys
 import os
 
+try:
+    import bge  # type: ignore
+except Exception:
+    bge = None
+
 # Script name to execute (will be replaced)
 SCRIPT_NAME = "{script_name}"
+
+
+def _build_context():
+    \"\"\"Build minimal context for the JS runtime bridge.
+
+    Returns a dict that will be serialized to JSON and made available in JS as
+    __BGE_CONTEXT__.
+    \"\"\"
+    ctx = {{
+        "scene_name": "",
+        "object_name": "",
+        "position": None,
+    }}
+
+    try:
+        if bge is not None:
+            logic = bge.logic  # type: ignore[attr-defined]
+            controller = logic.getCurrentController()
+            owner = controller.owner if controller else None
+            if owner is not None:
+                ctx["object_name"] = owner.name
+                try:
+                    ctx["scene_name"] = owner.scene.name
+                except Exception:
+                    try:
+                        ctx["scene_name"] = owner.scene.name
+                    except Exception:
+                        ctx["scene_name"] = ""
+                try:
+                    # worldPosition is a Vector-like, convert to plain list
+                    pos = getattr(owner, "worldPosition", None)
+                    if pos is not None:
+                        ctx["position"] = [float(pos[0]), float(pos[1]), float(pos[2])]
+                except Exception:
+                    ctx["position"] = None
+    except Exception:
+        pass
+
+    return ctx
+
 
 # Try to import the SDK's script handler
 try:
@@ -50,8 +95,11 @@ try:
         
         # Check if it's a JavaScript file
         if is_javascript_file(script_name):
+            # Build context for JS runtime bridge
+            ctx = _build_context()
+
             # Execute via JavaScript runtime
-            success, error = execute_controller_script(script_text, script_name)
+            success, error = execute_controller_script(script_text, script_name, context=ctx)
             if not success:
                 print(f"JavaScript execution error: {{error}}")
         else:
