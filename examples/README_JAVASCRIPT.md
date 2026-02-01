@@ -15,6 +15,18 @@ This directory contains example scripts demonstrating JavaScript usage in UPBGE.
   - Moves object based on keyboard input
   - Requires a Keyboard sensor linked to the controller
 
+- **javascript_camera_follow.js** - Camera follow (posição/rotação todo frame)
+  - Attach to the Camera; link an Always sensor to the controller
+  - Camera position is set every frame to follow a target object (e.g. Cube); adjust `targetName` and `offset` as needed
+
+- **javascript_camera_attach.js** - Camera attach (parent)
+  - Attach to the object to be followed (e.g. Cube); link an Always sensor to the controller
+  - Parents the camera to the object with setParent + localPosition/localRotation; camera follows automatically
+
+- **javascript_keyboard_always.js** - Keyboard with Always sensor
+  - Link Always + Keyboard to the same controller on the Cube (or player object)
+  - Maps W/A/S/D to movement every frame
+
 - **javascript_sensor_actuator.js** - Working with sensors and actuators
   - Checks sensor state and activates actuators
   - Demonstrates collision detection

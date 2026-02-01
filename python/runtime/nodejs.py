@@ -381,6 +381,10 @@ function __bgeMakeGameObject(name) {{
     return {{
         name: objName,
         get position() {{
+            const objPositions = ctx.object_positions || {{}};
+            if (objPositions[objName] && Array.isArray(objPositions[objName])) {{
+                return objPositions[objName].slice();
+            }}
             if (ctx.object_name === objName && ctx.position && Array.isArray(ctx.position)) {{
                 return ctx.position.slice();
             }}
@@ -411,6 +415,16 @@ function __bgeMakeGameObject(name) {{
         set scale(v) {{
             __bgeQueueForObject("setScale", objName, {{
                 value: Array.from(v || [1, 1, 1])
+            }});
+        }},
+        set localPosition(v) {{
+            __bgeQueueForObject("setLocalPosition", objName, {{
+                value: Array.from(v || [0, 0, 0])
+            }});
+        }},
+        set localRotation(v) {{
+            __bgeQueueForObject("setLocalRotation", objName, {{
+                value: Array.from(v || [0, 0, 0])
             }});
         }},
         applyMovement(vec) {{
@@ -448,6 +462,10 @@ function __bgeMakeGameObject(name) {{
                 return ctx.children.map(function(n) {{ return __bgeMakeGameObject(n); }});
             }}
             return [];
+        }},
+        lookAt(target) {{
+            const targetName = target && target.name ? target.name : null;
+            if (targetName) __bgeQueue({{ op: "lookAt", object: objName, target: targetName }});
         }},
     }};
 }}

@@ -187,6 +187,33 @@ def _apply_commands(commands, context):
                             obj.worldOrientation = value
                         except Exception:
                             pass
+            elif op == "lookAt":
+                target_name = cmd.get("target")
+                if target_name and target_name != obj_name:
+                    target_obj = _scene_get_object(scene, target_name)
+                    if target_obj is not None:
+                        try:
+                            import mathutils
+                            cam_pos = obj.worldPosition
+                            tgt_pos = target_obj.worldPosition
+                            direction = mathutils.Vector(
+                                (tgt_pos[0] - cam_pos[0], tgt_pos[1] - cam_pos[1], tgt_pos[2] - cam_pos[2])
+                            )
+                            if direction.length_squared > 1e-6:
+                                direction.normalize()
+                                align = getattr(obj, "alignAxisToVect", None)
+                                if align is not None and callable(align):
+                                    align(-direction, 1, 1.0)
+                                else:
+                                    up = mathutils.Vector((0, 0, 1))
+                                    right = direction.cross(up)
+                                    if right.length_squared > 1e-6:
+                                        right.normalize()
+                                        up = right.cross(direction)
+                                        m = mathutils.Matrix((right, -direction, up)).transposed()
+                                        obj.worldOrientation = m
+                        except Exception:
+                            pass
             elif op == "setScale":
                 value = cmd.get("value")
                 if value is not None and len(value) >= 3:
@@ -204,6 +231,24 @@ def _apply_commands(commands, context):
                         obj[prop_name] = cmd.get("value")
                     except Exception:
                         pass
+            elif op == "setLocalPosition":
+                value = cmd.get("value")
+                if value is not None and len(value) >= 3:
+                    try:
+                        obj.localPosition = value
+                    except Exception:
+                        pass
+            elif op == "setLocalRotation":
+                value = cmd.get("value")
+                if value is not None and len(value) >= 3:
+                    try:
+                        from mathutils import Euler
+                        obj.localOrientation = Euler(value).to_matrix()
+                    except Exception:
+                        try:
+                            obj.localOrientation = value
+                        except Exception:
+                            pass
             elif op == "setParent":
                 parent_name = cmd.get("parent")
                 try:

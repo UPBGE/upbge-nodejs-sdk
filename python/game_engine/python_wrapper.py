@@ -43,6 +43,7 @@ def _build_context():
         "parent_name": None,
         "properties": None,
         "children": None,
+        "object_positions": None,
         "scenes": None,
         "keyboard": None,
         "mouse": None,
@@ -134,6 +135,24 @@ def _build_context():
                         ctx["children"] = [child.name for child in children]
                 except Exception:
                     ctx["children"] = None
+
+                # Object positions in current scene (for camera follow, etc.)
+                try:
+                    scene = getattr(owner, "scene", None)
+                    if scene is not None:
+                        obj_positions = {{}}
+                        for obj in getattr(scene, "objects", []):
+                            try:
+                                pos = getattr(obj, "worldPosition", None)
+                                if pos is not None:
+                                    obj_positions[obj.name] = [float(pos[0]), float(pos[1]), float(pos[2])]
+                            except Exception:
+                                continue
+                        ctx["object_positions"] = obj_positions
+                    else:
+                        ctx["object_positions"] = None
+                except Exception:
+                    ctx["object_positions"] = None
 
             # Scene list snapshot
             try:
