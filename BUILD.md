@@ -4,7 +4,7 @@ Este documento explica como criar pacotes de distribuição do SDK para usuário
 
 ## Visão Geral
 
-O SDK precisa ser **plug-and-play** para usuários finais. Isso significa que todos os binários necessários (Node.js, TypeScript Compiler, TypeScript Language Server) devem estar incluídos no pacote ZIP de distribuição.
+O SDK precisa ser **plug-and-play** para usuários finais. Isso significa que o Node.js deve estar incluído no pacote ZIP de distribuição (ou detectado no sistema).
 
 ## Estrutura de Binários
 
@@ -14,22 +14,13 @@ Para que o SDK funcione completamente, os seguintes binários devem estar presen
 
 #### Windows
 - `runtime/windows/node.exe` - Node.js executável
-- `runtime/windows/npm.cmd` - npm wrapper (opcional, mas útil)
-- `lib/typescript/tsc.exe` - TypeScript Compiler
-- `lib/lsp/typescript-language-server.cmd` - TypeScript Language Server wrapper
-- `lib/lsp/cli.mjs` - TypeScript Language Server (arquivo principal)
+- `runtime/windows/npm.cmd` - npm wrapper (opcional)
 
 #### Linux
 - `runtime/linux/node-linux64` - Node.js executável
-- `lib/typescript/tsc` - TypeScript Compiler
-- `lib/lsp/typescript-language-server` - TypeScript Language Server wrapper
-- `lib/lsp/cli.mjs` - TypeScript Language Server (arquivo principal)
 
 #### macOS
 - `runtime/macos/node-osx` - Node.js executável
-- `lib/typescript/tsc` - TypeScript Compiler
-- `lib/lsp/typescript-language-server` - TypeScript Language Server wrapper
-- `lib/lsp/cli.mjs` - TypeScript Language Server (arquivo principal)
 
 ## Processo de Build
 
@@ -41,7 +32,7 @@ Certifique-se de que todos os binários estão instalados:
 # 1. Baixar Node.js
 python scripts/download_dependencies.py
 
-# 2. Instalar TypeScript e LSP
+# 2. (Opcional) scripts/setup_sdk.py para estrutura de pastas
 python scripts/setup_sdk.py
 ```
 
@@ -63,10 +54,10 @@ Execute o script de build:
 python scripts/build_package.py
 ```
 
-Isso criará um arquivo ZIP em `../upbge-javascript-sdk-X.X.X-YYYYMMDD.zip` com:
+Isso criará um arquivo ZIP em `../upbge-nodejs-sdk-X.X.X-YYYYMMDD.zip` com:
 - Todos os arquivos Python do add-on
-- Todos os binários (Node.js, TypeScript, LSP)
-- Arquivos de tipos TypeScript
+- Binários Node.js (runtime/)
+- Arquivos de tipos (.d.ts) para editores
 - Documentação essencial
 
 ### 4. Especificar Diretório de Saída (Opcional)
@@ -80,11 +71,8 @@ python scripts/build_package.py --output ./dist
 ### Incluído
 - ✅ Todos os arquivos Python do add-on
 - ✅ Binários do Node.js (runtime/)
-- ✅ TypeScript Compiler (lib/typescript/)
-- ✅ TypeScript Language Server (lib/lsp/)
-- ✅ Definições de tipos TypeScript (types/)
+- ✅ Definições de tipos (types/*.d.ts)
 - ✅ README.md e CHANGELOG.md
-- ✅ tsconfig.json
 
 ### Excluído
 - ❌ Scripts de desenvolvimento (scripts/)
@@ -99,37 +87,29 @@ python scripts/build_package.py --output ./dist
 O ZIP gerado terá a seguinte estrutura (importante: `__init__.py` deve estar dentro de um diretório):
 
 ```
-upbge-javascript-sdk-1.0.0-20240101.zip
+upbge-nodejs-sdk-1.0.0-20240101.zip
 └── upbge_nodejs_sdk/          ← Diretório do add-on (mesmo nome do bl_idname)
     ├── __init__.py            ← Deve estar dentro do diretório, não na raiz!
     ├── README.md
     ├── CHANGELOG.md
-    ├── tsconfig.json
     ├── python/
     │   ├── __init__.py
     │   ├── start.py
     │   ├── preferences.py
     │   ├── operators.py
     │   ├── console/
-    │   ├── editor/
     │   ├── game_engine/
     │   └── runtime/
     ├── types/
     │   ├── index.d.ts
     │   └── bge.d.ts
-    ├── runtime/
-    │   ├── windows/
-    │   │   └── node.exe
-    │   ├── linux/
-    │   │   └── node-linux64
-    │   └── macos/
-    │       └── node-osx
-    └── lib/
-        ├── typescript/
-        │   └── tsc.exe (ou tsc)
-        └── lsp/
-            ├── typescript-language-server.cmd (ou typescript-language-server)
-            └── cli.mjs
+    └── runtime/
+        ├── windows/
+        │   └── node.exe
+        ├── linux/
+        │   └── node-linux64
+        └── macos/
+            └── node-osx
 ```
 
 **IMPORTANTE**: O Blender requer que o `__init__.py` esteja dentro de um diretório no ZIP, não na raiz. O script `build_package.py` cria automaticamente essa estrutura correta.
@@ -145,19 +125,15 @@ O usuário final simplesmente:
 5. **Pronto!** O SDK funciona imediatamente (plug-and-play)
 
 Não é necessário:
-- ❌ Instalar Node.js separadamente
-- ❌ Instalar TypeScript separadamente
-- ❌ Instalar TypeScript Language Server separadamente
+- ❌ Instalar Node.js separadamente (se incluído no ZIP)
 - ❌ Configurar caminhos manualmente
 
 ## Notas Importantes
 
 ### Tamanho do Pacote
 
-O pacote será relativamente grande (~50-100 MB) devido aos binários incluídos:
+O pacote será relativamente grande (~30-50 MB) devido ao Node.js incluído:
 - Node.js: ~30-50 MB
-- TypeScript: ~5-10 MB
-- TypeScript Language Server: ~10-20 MB
 - Código Python e tipos: ~1-2 MB
 
 Isso é aceitável para um SDK plug-and-play.
@@ -168,7 +144,7 @@ O nome do arquivo ZIP inclui:
 - Versão do SDK (do `bl_info` em `__init__.py`)
 - Data de build (YYYYMMDD)
 
-Exemplo: `upbge-javascript-sdk-1.0.0-20240115.zip`
+Exemplo: `upbge-nodejs-sdk-1.0.0-20240115.zip`
 
 ### Multiplataforma
 
@@ -181,8 +157,7 @@ O pacote inclui binários para todas as plataformas (Windows, Linux, macOS). O a
 Se o script reportar arquivos faltando:
 
 1. Execute `python scripts/download_dependencies.py` para baixar Node.js
-2. Execute `python scripts/setup_sdk.py` para instalar TypeScript e LSP
-3. Execute `python scripts/build_package.py --check-only` novamente
+2. Execute `python scripts/build_package.py --check-only` novamente
 
 ### Erro: "ZIP muito grande"
 

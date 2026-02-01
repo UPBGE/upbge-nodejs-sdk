@@ -74,7 +74,7 @@ class SDK_OPEN_IN_EDITOR_OT_operator(Operator):
 
     bl_idname = "sdk.open_in_editor"
     bl_label = "Open in External Editor"
-    bl_description = "Open a JS/TS script (or the SDK/project folder) in the configured external editor"
+    bl_description = "Open a JS script (or the SDK/project folder) in the configured external editor"
     bl_options = {'REGISTER'}
 
     def invoke(self, context, event):
@@ -103,7 +103,7 @@ class SDK_OPEN_IN_EDITOR_OT_operator(Operator):
             if text and text.filepath:
                 target_path = bpy.path.abspath(text.filepath)
 
-        # 2) If no active-controller script, pick the first JS/TS script on the active object
+        # 2) If no active-controller script, pick the first JS script on the active object
         if not target_path:
             ob = context.active_object
             if ob and getattr(ob, "game", None):

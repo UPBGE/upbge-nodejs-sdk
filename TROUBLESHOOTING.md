@@ -39,13 +39,32 @@
 1. Recarregue o add-on (desative e ative novamente)
 2. Verifique o console do Blender para mensagens de erro
 3. Verifique se aparecem mensagens como:
-   - `UPBGE JavaScript SDK: Console modules in sys.modules: ['console_javascript', 'console_typescript']`
+   - `UPBGE JavaScript SDK: Console modules in sys.modules: ['console_javascript']`
 
 **Se ainda não aparecer:**
 - Os módulos podem não estar sendo registrados corretamente
 - Verifique se há erros de importação no console
 
-#### 4. Painel no Logic Editor não aparece
+#### 4. Logs do fluxo da ponte (bridge)
+
+**O que são:** Mensagens com prefixo `[UPBGE-JS]` no console que mostram cada passo do fluxo (wrapper → Node.js → extração de comandos → aplicação no BGE).
+
+**Ordem típica ao dar Play e pressionar uma tecla:**
+- `[UPBGE-JS] Wrapper executing script: ...`
+- `[UPBGE-JS] Context built object_name=... scene_name=...`
+- `[UPBGE-JS] Node execute_with_context code_len=... node_path=...`
+- `[UPBGE-JS] Node subprocess done returncode=... output_len=... has_marker=...`
+- `[UPBGE-JS] Node run success=... output_len=...`
+- `[UPBGE-JS] Extracted N commands`
+- `[UPBGE-JS] _apply_commands scene=... object_name=... num_commands=...`
+- `[UPBGE-JS] applyMovement obj=... vec=...` (quando há movimento)
+- `[UPBGE-JS] JS execution success=...`
+
+**Se o cubo não se mover:** confira se aparece `applyMovement obj=...` e se `object not found` não aparece. Se `has_marker=False` ou `Extracted 0 commands`, o Node não está enviando comandos.
+
+**Desativar os logs:** em `python/game_engine/script_handler.py` defina `DEBUG_BRIDGE_LOGS = False`; em `python/runtime/nodejs.py` defina `DEBUG_NODE_LOGS = False`.
+
+#### 5. Painel no Logic Editor não aparece
 
 **Verificações:**
 1. Certifique-se de que está no **Logic Editor**
@@ -56,7 +75,7 @@
 - Verifique se há erros no console do Blender
 - Verifique se o módulo `ui` está sendo registrado
 
-#### 5. Controller ainda executa como Python
+#### 6. Controller ainda executa como Python
 
 **Sintoma:** Ao pressionar 'P', o erro mostra que Python está tentando executar o arquivo `.js`
 
@@ -75,8 +94,8 @@ Após instalar o add-on, verifique:
 - [ ] SDK Path está configurado (ou foi auto-detectado)
 - [ ] Mensagens de registro aparecem no console do Blender
 - [ ] Console mostra "Running UPBGE JavaScript SDK from ..."
-- [ ] Menu "Languages" no console mostra "JavaScript" e "TypeScript"
-- [ ] Painel "JavaScript/TypeScript" aparece no Logic Editor
+- [ ] Menu "Languages" no console mostra "JavaScript"
+- [ ] Painel "JavaScript" aparece no Logic Editor
 - [ ] Controllers foram configurados com "Setup" após atribuir arquivos `.js`
 
 ## Erros Comuns

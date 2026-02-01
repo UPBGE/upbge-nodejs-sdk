@@ -55,6 +55,24 @@ O SDK não registra mais o painel de editor interno por padrão. O desenvolvimen
 - A execução ainda passa pelo Python primeiro, mas é redirecionada imediatamente
 - Performance pode ser ligeiramente menor que execução nativa (mas ainda muito rápida)
 
+### 5. Node.js e a ponte rodam automaticamente?
+
+**Sim.** Depois de configurar o controller (atribuir o .js e clicar em "Setup for JavaScript"):
+
+1. **Ao pressionar Play:** o game engine inicia.
+2. **A cada frame em que o sensor está ativo:** o controller é executado.
+3. **O wrapper (Python)** roda e chama o runtime Node.js com o código do seu .js e o contexto (cena, objeto, sensores, etc.).
+4. **O Node.js** executa o seu script; chamadas à API `bge` (ex.: `obj.applyMovement`) viram comandos em fila.
+5. **O wrapper** lê a saída do Node, extrai os comandos (`___BGE_CMDS___`) e aplica no BGE (movimento, posição, etc.).
+
+**Requisitos para o cubo/objeto se mover:**
+- Node.js instalado e acessível no PATH (ou caminho configurado nas preferências do add-on).
+- Sensor (ex.: Keyboard) ligado ao controller para o controller rodar a cada frame.
+- Ter clicado em **"Setup for JavaScript"** depois de atribuir o .js (para o wrapper ser criado e atribuído ao controller).
+- Nome do objeto na cena igual ao esperado (o contexto usa o dono do controller; o bridge aplica os comandos nesse objeto).
+
+Se nada se mover e não houver erro, confira: Node no PATH, sensor ligado ao controller, e "Setup" já executado para esse controller.
+
 ## Workflow Recomendado
 
 ### Workflow para Criar um Controller JavaScript

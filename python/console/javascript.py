@@ -181,7 +181,7 @@ def autocomplete(context):
     """
     Autocomplete for JavaScript console.
     For now, this is a placeholder - full implementation would require
-    integration with TypeScript language server or similar.
+    integration with language tooling if needed.
     """
     sc = context.space_data
     
@@ -191,7 +191,7 @@ def autocomplete(context):
         cursor = current_line.current_character
         
         # Simple autocomplete: just return without changes for now
-        # Full implementation would use TypeScript language server
+        # Full implementation would use a language server if needed
         # or analyze JavaScript AST
         
     except Exception as e:

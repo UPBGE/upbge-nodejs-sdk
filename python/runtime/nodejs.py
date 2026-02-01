@@ -14,6 +14,14 @@ try:
 except ImportError:
     bpy = None
 
+# Set to False to disable Node runtime flow logs
+DEBUG_NODE_LOGS = True
+
+
+def _node_log(msg):
+    if DEBUG_NODE_LOGS:
+        print("[UPBGE-JS] " + msg)
+
 
 def get_sdk_path():
     """Get the SDK path from preferences or auto-detect."""
@@ -89,9 +97,31 @@ def get_node_path():
 class NodeJSRuntime:
     """Wrapper for executing JavaScript code using Node.js."""
     
-    def __init__(self):
+    def __init__(self, use_worker=False):
         self.node_path = get_node_path()
         self._interactive_context = {}  # Store for interactive console context
+        self._use_worker = use_worker
+        self._worker_process = None
+        self._worker_stdin = None
+        self._worker_stdout = None
+        self._worker_exec_id = 0
+        self._worker_bootstrap = r"""
+(function(){
+  const readline = require('readline');
+  const rl = readline.createInterface({ input: process.stdin });
+  rl.on('line', function(line) {
+    try {
+      const msg = JSON.parse(line);
+      const id = msg.id || '';
+      eval(msg.code);
+      console.log('___BGE_CMDS___' + id + '\t' + JSON.stringify(typeof __bgeCommands !== 'undefined' ? __bgeCommands : []));
+    } catch (e) {
+      console.error(e.message || e);
+      console.log('___BGE_CMDS___' + id + '\t[]');
+    }
+  });
+})();
+"""
     
     def get_node_path(self):
         """Get the path to Node.js executable."""
@@ -238,6 +268,62 @@ try {{
         except Exception as e:
             return ("", f"Error executing JavaScript: {str(e)}", False)
 
+    def _ensure_worker(self):
+        """Start persistent Node worker if not running."""
+        if self._worker_process is not None and self._worker_process.poll() is None:
+            return True
+        node_path = self.get_node_path()
+        if not node_path:
+            return False
+        try:
+            self._worker_process = subprocess.Popen(
+                [node_path, "-e", self._worker_bootstrap],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+            )
+            self._worker_stdin = self._worker_process.stdin
+            self._worker_stdout = self._worker_process.stdout
+            return True
+        except Exception:
+            self._worker_process = None
+            self._worker_stdin = None
+            self._worker_stdout = None
+            return False
+
+    def _worker_execute(self, wrapped_code, timeout=10):
+        """Send code to worker and read response. Returns (output, error_output, success)."""
+        if not self._ensure_worker():
+            return ("", "Worker failed to start", False)
+        self._worker_exec_id += 1
+        req_id = str(self._worker_exec_id)
+        try:
+            import json as _json
+            msg = {"id": req_id, "code": wrapped_code}
+            line = _json.dumps(msg) + "\n"
+            self._worker_stdin.write(line)
+            self._worker_stdin.flush()
+        except Exception as e:
+            self._worker_process = None
+            return ("", str(e), False)
+        marker = "___BGE_CMDS___"
+        output_lines = []
+        end_time = __import__("time").time() + timeout
+        while __import__("time").time() < end_time:
+            try:
+                line_out = self._worker_stdout.readline()
+            except Exception:
+                break
+            if not line_out:
+                break
+            output_lines.append(line_out)
+            if marker in line_out and (marker + req_id) in line_out:
+                break
+        output = "".join(output_lines)
+        return (output, "", True)
+
     def execute_with_context(self, code, context=None, timeout=10):
         """
         Execute JavaScript code using Node.js with BGE bridge context.
@@ -254,6 +340,7 @@ try {{
         import json
 
         node_path = self.get_node_path()
+        _node_log("Node execute_with_context code_len=%s node_path=%s" % (len(code or ""), node_path or "NOT FOUND"))
         if not node_path:
             return ("", "Error: Node.js not found. Please install Node.js or configure SDK path.", False)
 
@@ -297,12 +384,33 @@ function __bgeMakeGameObject(name) {{
             if (ctx.object_name === objName && ctx.position && Array.isArray(ctx.position)) {{
                 return ctx.position.slice();
             }}
-            // Para outros objetos, retornamos um vetor neutro
             return [0, 0, 0];
         }},
         set position(v) {{
             __bgeQueueForObject("setPosition", objName, {{
                 value: Array.from(v || [0, 0, 0])
+            }});
+        }},
+        get rotation() {{
+            if (ctx.object_name === objName && ctx.rotation && Array.isArray(ctx.rotation)) {{
+                return ctx.rotation.slice();
+            }}
+            return [0, 0, 0];
+        }},
+        set rotation(v) {{
+            __bgeQueueForObject("setRotation", objName, {{
+                value: Array.from(v || [0, 0, 0])
+            }});
+        }},
+        get scale() {{
+            if (ctx.object_name === objName && ctx.scale && Array.isArray(ctx.scale)) {{
+                return ctx.scale.slice();
+            }}
+            return [1, 1, 1];
+        }},
+        set scale(v) {{
+            __bgeQueueForObject("setScale", objName, {{
+                value: Array.from(v || [1, 1, 1])
             }});
         }},
         applyMovement(vec) {{
@@ -324,7 +432,9 @@ function __bgeMakeGameObject(name) {{
             }});
         }},
         getParent() {{
-            // Não resolvemos hierarquia completa ainda; retornar null é seguro.
+            if (ctx.object_name === objName && ctx.parent_name) {{
+                return __bgeMakeGameObject(ctx.parent_name);
+            }}
             return null;
         }},
         setParent(parent) {{
@@ -334,27 +444,55 @@ function __bgeMakeGameObject(name) {{
             }});
         }},
         getChildren() {{
-            // Poderíamos expor via contexto no futuro; por enquanto, retornar lista vazia.
+            if (ctx.object_name === objName && Array.isArray(ctx.children)) {{
+                return ctx.children.map(function(n) {{ return __bgeMakeGameObject(n); }});
+            }}
             return [];
         }},
     }};
 }}
 
-function __bgeMakeScene(name) {{
+function __bgeMakeScene(sceneNameOrData) {{
     const ctx = __BGE_CONTEXT__ || {{}};
-    const sceneName = name || ctx.scene_name || "";
+    let sceneName = "";
+    let objectNames = [];
+    if (typeof sceneNameOrData === "string") {{
+        sceneName = sceneNameOrData;
+        const scenes = ctx.scenes || [];
+        for (let i = 0; i < scenes.length; i++) {{
+            if (scenes[i].name === sceneName) {{
+                objectNames = Array.isArray(scenes[i].objects) ? scenes[i].objects.slice() : [];
+                break;
+            }}
+        }}
+    }} else if (sceneNameOrData && sceneNameOrData.name) {{
+        sceneName = sceneNameOrData.name;
+        objectNames = Array.isArray(sceneNameOrData.objects) ? sceneNameOrData.objects.slice() : [];
+    }} else {{
+        sceneName = ctx.scene_name || "";
+        const scenes = ctx.scenes || [];
+        for (let i = 0; i < scenes.length; i++) {{
+            if (scenes[i].name === sceneName) {{
+                objectNames = Array.isArray(scenes[i].objects) ? scenes[i].objects.slice() : [];
+                break;
+            }}
+        }}
+    }}
+    const objList = objectNames.map(function(n) {{ return __bgeMakeGameObject(n); }});
     return {{
         name: sceneName,
         active: true,
-        objects: [],
+        get objects() {{ return objList; }},
         getObject(objName) {{
             return __bgeMakeGameObject(objName);
         }},
         addObject(object) {{
-            // Poderemos futuramente enfileirar um comando específico.
+            const oname = object && object.name ? object.name : null;
+            if (oname) __bgeQueue({{ op: "sceneAddObject", scene: sceneName, object: oname }});
         }},
         removeObject(object) {{
-            // Idem acima - ainda não implementado.
+            const oname = object && object.name ? object.name : null;
+            if (oname) __bgeQueue({{ op: "sceneRemoveObject", scene: sceneName, object: oname }});
         }},
     }};
 }}
@@ -365,19 +503,24 @@ const bge = {{
             return __bgeMakeScene();
         }},
         getSceneList() {{
-            // No momento só trabalhamos com a cena atual.
-            return [__bgeMakeScene()];
+            const scenes = (__BGE_CONTEXT__ && __BGE_CONTEXT__.scenes) || [];
+            return scenes.map(function(s) {{ return __bgeMakeScene(s); }});
         }},
         getScene(name) {{
+            if (!name) return __bgeMakeScene();
             return __bgeMakeScene(name);
         }},
         getCurrentController() {{
             const ctx = __BGE_CONTEXT__ || {{}};
+            const sensors = ctx.sensors || {{}};
             return {{
                 name: ctx.controller_name || "",
                 type: "PYTHON",
                 active: true,
-                owner: __bgeMakeGameObject()
+                owner: __bgeMakeGameObject(),
+                get sensors() {{
+                    return sensors;
+                }}
             }};
         }},
         getCurrentObject() {{
@@ -459,6 +602,21 @@ const bge = {{
             }};
         }},
     }},
+    // Blender/UPBGE use GHOST key codes (sensor.inputs); A=23 confirmed, others guessed
+    events: {{
+        AKEY: 23,
+        DKEY: 26,
+        WKEY: 45,
+        SKEY: 41,
+        UPARROWKEY: 82,
+        DOWNARROWKEY: 84,
+        LEFTARROWKEY: 80,
+        RIGHTARROWKEY: 79,
+        SPACEKEY: 32,
+        ACTIVE: 1,
+        JUST_ACTIVATED: 2,
+        JUST_RELEASED: 3,
+    }},
     types: {{
         Vector3(x, y, z) {{
             return {{
@@ -488,6 +646,18 @@ const bge = {{
 }};
 global.bge = bge;
 
+// DEBUG: log context before user code runs
+(function() {{
+    var _ctx = __BGE_CONTEXT__ || {{}};
+    var _sens = _ctx.sensors || {{}};
+    var _kb = _sens.Keyboard;
+    var _evLen = (_kb && _kb.events && Array.isArray(_kb.events)) ? _kb.events.length : 'n/a';
+    console.log("[UPBGE-JS] DEBUG ctx.Keyboard.events.length=" + _evLen);
+    if (_kb && _kb.events && _kb.events.length > 0) {{
+        console.log("[UPBGE-JS] DEBUG first event key=" + _kb.events[0][0] + " status=" + _kb.events[0][1]);
+    }}
+}})();
+
 // Execute user code in an IIFE to avoid leaking globals
 (function() {{
     try {{
@@ -503,6 +673,9 @@ global.bge = bge;
     }}
 }})();
 
+// DEBUG: log commands count before sending
+console.log("[UPBGE-JS] DEBUG __bgeCommands.length=" + (typeof __bgeCommands !== 'undefined' ? __bgeCommands.length : 'undefined'));
+
 // After user code finishes, emit the queued commands as a single line
 try {{
     // Marker used by the Python side to extract commands
@@ -511,6 +684,12 @@ try {{
     console.error("Failed to serialize BGE commands: " + e.toString());
 }}
 """
+
+            if self._use_worker:
+                output, error_output, success = self._worker_execute(wrapped_code, timeout=timeout)
+                _node_log("Node worker done success=%s output_len=%s has_marker=%s" % (
+                    success, len(output or ""), "___BGE_CMDS___" in (output or "")))
+                return (output, error_output, success)
 
             result = subprocess.run(
                 [node_path, "-e", wrapped_code],
@@ -521,6 +700,8 @@ try {{
 
             output = result.stdout
             error_output = result.stderr
+            _node_log("Node subprocess done returncode=%s output_len=%s has_marker=%s" % (
+                result.returncode, len(output or ""), "___BGE_CMDS___" in (output or "")))
 
             if result.returncode != 0:
                 if not error_output:

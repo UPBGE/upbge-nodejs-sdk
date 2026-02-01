@@ -8,7 +8,7 @@ Este SDK fornece suporte para desenvolvimento JavaScript no UPBGE, incluindo:
 
 - **Console Interativo**: Console JavaScript para testar código rapidamente
 - **Integração com Editor Externo**: Abertura rápida do SDK/projeto em VS Code, Cursor ou editor personalizado
-- **Type Definitions**: Definições de tipos em `types/` para uso opcional em editores que suportam TypeScript
+- **Type Definitions**: Definições de tipos em `types/` para uso opcional em editores que suportam JSDoc / `.d.ts`
 - **Game Engine Integration**: Integração com controllers JavaScript no game engine
 
 ## Instalação
@@ -58,7 +58,7 @@ Para um guia rápido de setup, consulte `SETUP.md`.
 ### Configurar SDK Path
 
 1. Abra **Edit → Preferences → Add-ons**
-2. Selecione "UPBGE JavaScript/TypeScript SDK"
+2. Selecione "UPBGE Node.js SDK"
 3. Configure o **SDK Path** para o diretório do SDK
 4. O SDK será carregado automaticamente
 
@@ -121,7 +121,7 @@ if (obj) {
 
 ### Type Definitions (opcional)
 
-O diretório `types/` contém arquivos `.d.ts` opcionais para quem quiser melhor experiência em editores que suportam TypeScript. Eles não são usados pelo add-on em tempo de execução.
+O diretório `types/` contém arquivos `.d.ts` opcionais para autocomplete em editores que suportam JSDoc/definições de tipos. Não são usados pelo add-on em tempo de execução.
 
 ## Requisitos
 

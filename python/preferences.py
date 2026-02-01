@@ -78,6 +78,12 @@ class SDKAddonPreferences(AddonPreferences):
         description="Automatically update SDK when new version is available"
     )
 
+    use_persistent_worker: BoolProperty(
+        name="Use Persistent Worker",
+        default=False,
+        description="Keep one Node process per game session (better performance, one process per frame instead of spawn)"
+    )
+
     def draw(self, context):
         layout = self.layout
         layout.label(text="UPBGE JavaScript SDK")
@@ -110,6 +116,7 @@ class SDKAddonPreferences(AddonPreferences):
         box = layout.box()
         box.label(text="Advanced Settings")
         box.prop(self, "auto_update")
+        box.prop(self, "use_persistent_worker")
         
         if self.nodejs_path:
             box.label(text=f"Node.js: {self.nodejs_path}")

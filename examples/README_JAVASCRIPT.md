@@ -1,6 +1,6 @@
-# JavaScript/TypeScript Examples for UPBGE
+# JavaScript Examples for UPBGE
 
-This directory contains example scripts demonstrating JavaScript and TypeScript usage in UPBGE.
+This directory contains example scripts demonstrating JavaScript usage in UPBGE.
 
 ## Available Examples
 
@@ -35,32 +35,23 @@ This directory contains example scripts demonstrating JavaScript and TypeScript 
   - Vehicle: addWheel, setSteeringValue, applyEngineForce, applyBraking
   - Character: jump, walkDirection, setVelocity, onGround
 
-### TypeScript Examples
-
-- **typescript_basic_movement.ts** - TypeScript version with type safety
-  - Same functionality as JavaScript version
-  - Demonstrates TypeScript interfaces and type annotations
-  - Shows type-safe property access
-
 ## How to Use
 
-1. Copy the example code into a JavaScript/TypeScript controller in UPBGE
+1. Copy the example code into a JavaScript controller in UPBGE
 2. Set up the required sensors/actuators as mentioned in each example
 3. Run the game (Press P) to see the script in action
 
 ## Requirements
 
-- UPBGE compiled with `WITH_JAVASCRIPT=ON`
-- V8 JavaScript engine installed
-- (For TypeScript examples) TypeScript compiler (tsc) installed and in PATH
+- UPBGE with the Node.js SDK add-on installed
+- Node.js (bundled in SDK or system PATH)
 
 ## Notes
 
-- All examples assume a basic understanding of JavaScript/TypeScript
+- All examples assume a basic understanding of JavaScript
 - Sensor and actuator names in examples are placeholders - use your actual names
-- For TypeScript examples, ensure the controller is set to use TypeScript mode
 
 ## See Also
 
-- JavaScript/TypeScript API Documentation
+- JavaScript API (types/bge.d.ts for editor hints)
 - Python API Documentation (for reference, as APIs are similar)

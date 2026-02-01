@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 /**
- * UPBGE JavaScript/TypeScript SDK Type Definitions
+ * UPBGE Node.js SDK – type definitions for JavaScript
  * 
  * Main entry point for type definitions.
  */

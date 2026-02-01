@@ -3,10 +3,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 /**
- * UPBGE Game Engine TypeScript Definitions
- * 
- * This file provides type definitions for the UPBGE JavaScript/TypeScript API.
- * Based on the UPBGE JavaScript API documentation.
+ * UPBGE Game Engine – type definitions for the JavaScript API.
+ * For use in editors that support .d.ts (JSDoc / IntelliSense).
  */
 
 declare namespace bge {
