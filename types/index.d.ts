@@ -11,4 +11,4 @@
 /// <reference path="bge.d.ts" />
 
 // Re-export bge namespace for convenience
-export { bge };
+export { bge } from "./bge";

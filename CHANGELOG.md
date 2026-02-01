@@ -1,33 +1,88 @@
 # Changelog
 
-Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
+All notable changes to the UPBGE Node.js SDK are documented in this file.
 
-## [1.0.0] - 2024-XX-XX
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-### Adicionado
-- Estrutura base do SDK como add-on do Blender/UPBGE
-- Console JavaScript interativo usando Node.js do SDK
-- Integração com text editor do Blender (legado, não mais registrada por padrão)
-- Integração com game engine para controllers JavaScript
-- Type definitions em `types/` para API BGE (para uso opcional em editores)
-- Sistema de preferências para gerenciar SDK path
-- Operadores para instalar/atualizar SDK
-- Suporte a múltiplas plataformas (Windows, Linux, macOS)
-- Documentação completa (README.md, INSTALL_DEPENDENCIES.md)
-- Scripts de setup e download de dependências
+---
 
-### Estrutura
-- `__init__.py`: Add-on principal seguindo padrão Armory
-- `python/`: Módulos Python do SDK
-  - `console/`: Console JavaScript
-  - `runtime/`: Wrapper para Node.js
-  - `game_engine/`: Integração com controllers
-- `runtime/`: Diretório para executáveis Node.js
-- `types/`: Type definitions para uso em editores
-- `scripts/`: Scripts de setup e instalação
+## [0.0.1] - 2025-01-27
 
-### Notas
-- Node.js deve ser instalado manualmente ou via scripts
-- SDK totalmente independente do UPBGE core
-- Suporte a SDK local por projeto (./bge_js_sdk/)
-- Suporte a variável de ambiente BGE_JAVASCRIPT_SDK
+### Added
+
+#### Node.js Bridge (Python ↔ JavaScript)
+
+- **Command bridge via JSON**: JavaScript scripts run in Node.js and send commands as JSON (`___BGE_CMDS___`) for Python to apply in the BGE in the same frame.
+- **Rich context**: The Python wrapper builds a context (`__BGE_CONTEXT__`) with scene, object, position, rotation, scale, properties, children, parent, scene list, all object positions, input (keyboard, mouse, joystick), sensors, actuators, and engine.
+
+#### Controllers and objects
+
+- **GameObject**: `position`, `rotation`, `scale` (read/write), `applyMovement`, `setPosition`, `setRotation`, `setScale`, `setLocalPosition`, `setLocalRotation`, `getProperty`/`setProperty`, `getParent`/`setParent`, `getChildren`, `lookAt`.
+- **Scene**: `name`, `objects`, `getObject(name)`, `get(name)`, `addObject`, `removeObject`, `activeCamera` (get/set).
+- **Controller**: `owner`, `sensors`, `actuators`, `activate(actuator)`, `deactivate(actuator)`.
+- **Sensors**: State `positive`, `type`; for collision sensor, `hitObjectList` (array of `{ name }`).
+
+#### Input
+
+- **Keyboard**: `bge.logic.getKeyboardInput().isPressed(key)`, `isJustPressed`, `isJustReleased`; GHOST key codes in `bge.events` (AKEY, WKEY, SKEY, DKEY, SPACEKEY, etc.).
+- **Mouse**: `bge.logic.getMouseInput().getPosition()`, `isPressed`, `isJustPressed`, `isJustReleased`, `getWheelDelta()`.
+- **Joystick**: `bge.logic.getJoystickInput().getJoystickCount()`, `isPressed(joystick, button)`, `getAxis(joystick, axis)`.
+
+#### Viewport and camera
+
+- **bge.render**: `getWindowWidth()`, `getWindowHeight()`.
+- **Active camera**: `scene.activeCamera` (get/set by GameObject); `setActiveCamera` command.
+- **Viewport**: `gameObject.setViewport(left, bottom, right, top)` for cameras.
+
+#### RayCast
+
+- **obj.rayCast(to, from?, dist?, prop?, face?, xray?, mask?)**: Queues command; result in **next frame** in `obj.lastRayCastResult` (`{ object, point, normal }`).
+- **obj.rayCastTo(target, dist?, prop?)**: Same; result in `lastRayCastResult` next frame.
+- Storage across frames in `script_handler._raycast_results`; wrapper fills `ctx.rayCastResults`.
+
+#### Constraints (physics)
+
+- **bge.constraints.setGravity(x, y, z)** or `setGravity([x, y, z])`.
+- **Vehicle**: `createVehicle(chassis)` (once per chassis), `vehicleAddWheel`, `vehicleSetSteeringValue`, `vehicleApplyEngineForce`, `vehicleApplyBraking`; internal mapping by object name in Python.
+- **Character**: `characterJump(character)`, `characterWalkDirection(character, vec)`, `characterSetVelocity(character, vec, time, local)`.
+
+#### Engine and types
+
+- **bge.logic.getGameEngine()**: `getFrameRate()`, `getCurrentFrame()`, `getTimeSinceStart()`, `endGame()`, `restartGame()`.
+- **bge.types.Vector3(x, y, z)** (JS helpers).
+- **Type definitions** in `types/bge.d.ts` for IntelliSense/JSDoc (Controller, Scene, GameObject, RayCastResult, render, constraints, etc.).
+
+#### Examples
+
+- `javascript_basic_movement.js` – continuous movement.
+- `javascript_keyboard_control.js` – keyboard (W/A/S/D).
+- `javascript_keyboard_always.js` – Always + Keyboard.
+- `javascript_camera_attach.js` – camera follows target (offset, lookAt, smoothing).
+- `javascript_sensor_actuator.js` – sensors, actuators, collision (`hitObjectList`).
+- `javascript_scene_access.js` – scene, objects, active camera.
+- `javascript_raycast.js` – rayCast/rayCastTo and `lastRayCastResult`.
+- `javascript_vehicle_character.js` – gravity, vehicle, character via `bge.constraints`.
+
+#### Infrastructure
+
+- **JavaScript console** interactive in UPBGE (state accumulated between runs).
+- **Node.js worker** optional (persistent) to reduce subprocess cost.
+- **Python wrapper** generated by script; automatic assignment to controllers with `.js`/`.mjs` files.
+- **Helper _scene_get_object** in script_handler (compatible with `.get()` and `[]` in UPBGE).
+- **Helper _get_raycast_results** for wrapper to read rayCast results from the previous frame.
+
+### Fixed
+
+- Use of `{{}}` in wrapper template to avoid `format()` error on literal braces.
+- Prefer `sensor.inputs` over `sensor.events` (deprecated in UPBGE) for keyboard.
+- Key codes aligned with GHOST (UPBGE) in `bge.events`.
+- Wrapper now overwrites existing text block content so updates are applied in Blender.
+
+### Notes
+
+- **rayCast/rayCastTo** result is only available in the **next frame** (`lastRayCastResult`).
+- **Vehicle/Character** do not return a handle to JS; Python keeps the mapping by object name for constraint commands.
+
+---
+
+[0.0.1]: https://github.com/buuhvprojects/upbge-nodejs-sdk/releases/tag/v0.0.1

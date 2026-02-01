@@ -28,24 +28,24 @@ This directory contains example scripts demonstrating JavaScript usage in UPBGE.
   - Maps W/A/S/D to movement every frame
 
 - **javascript_sensor_actuator.js** - Working with sensors and actuators
-  - Checks sensor state and activates actuators
-  - Demonstrates collision detection
-  - Shows how to iterate over hit objects
+  - Checks sensor state and activates/deactivates actuators (cont.activate(actuator), cont.deactivate(actuator))
+  - Collision sensor: cont.sensors["Collision"].hitObjectList (array of { name })
+  - Demonstrates cont.actuators["MoveForward"], etc.
 
 - **javascript_scene_access.js** - Accessing scene objects
-  - Gets active camera
-  - Finds objects by name (scene.get)
-  - Calculates distances between objects
-  - Iterates over all scene objects
+  - scene.activeCamera (get/set), scene.getObject(name) / scene.get(name)
+  - bge.render.getWindowWidth(), getWindowHeight()
+  - Finds objects by name, calculates distances, iterates over scene objects
 
 - **javascript_raycast.js** - Raycasting
-  - obj.rayCast(to, from?, dist?, prop?, face?, xray?, mask?)
-  - obj.rayCastTo(other, dist?, prop?) → { object, point, normal }
+  - obj.rayCast(to, from?, dist?, prop?, face?, xray?, mask?) – result in obj.lastRayCastResult **next frame**
+  - obj.rayCastTo(target, dist?, prop?) – result in obj.lastRayCastResult **next frame**
+  - lastRayCastResult: { object, point, normal }
 
 - **javascript_vehicle_character.js** - Physics constraints
-  - bge.constraints.setGravity, createVehicle, getVehicleConstraint, getCharacter
-  - Vehicle: addWheel, setSteeringValue, applyEngineForce, applyBraking
-  - Character: jump, walkDirection, setVelocity, onGround
+  - bge.constraints.setGravity(x, y, z)
+  - bge.constraints.createVehicle(chassis), vehicleAddWheel, vehicleSetSteeringValue, vehicleApplyEngineForce, vehicleApplyBraking
+  - bge.constraints.characterJump(obj), characterWalkDirection(obj, vec), characterSetVelocity(obj, vec, time, local)
 
 ## How to Use
 

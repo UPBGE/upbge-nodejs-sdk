@@ -45,12 +45,17 @@ def _build_context():
         "children": None,
         "object_positions": None,
         "scenes": None,
+        "windowWidth": None,
+        "windowHeight": None,
+        "active_camera_name": None,
         "keyboard": None,
         "mouse": None,
         "joystick": None,
         "engine": None,
         "controller_name": "",
+        "actuators": None,
         "sensors": None,
+        "rayCastResults": None,
     }}
 
     try:
@@ -59,10 +64,11 @@ def _build_context():
             controller = logic.getCurrentController()
             owner = controller.owner if controller else None
 
-            # Controller metadata
+            # Controller metadata and actuators list
             try:
                 if controller is not None:
                     ctx["controller_name"] = controller.name
+                    ctx["actuators"] = [getattr(a, "name", str(i)) for i, a in enumerate(getattr(controller, "actuators", []))]
             except Exception:
                 pass
 
@@ -154,6 +160,28 @@ def _build_context():
                 except Exception:
                     ctx["object_positions"] = None
 
+            # Viewport and active camera (current scene)
+            try:
+                try:
+                    render = getattr(bge, "render", None)
+                    if render is not None:
+                        ctx["windowWidth"] = int(getattr(render, "getWindowWidth", lambda: 0)())
+                        ctx["windowHeight"] = int(getattr(render, "getWindowHeight", lambda: 0)())
+                except Exception:
+                    ctx["windowWidth"] = None
+                    ctx["windowHeight"] = None
+                try:
+                    scene = getattr(owner, "scene", None)
+                    if scene is not None:
+                        ac = getattr(scene, "active_camera", None)
+                        ctx["active_camera_name"] = ac.name if ac is not None else None
+                    else:
+                        ctx["active_camera_name"] = None
+                except Exception:
+                    ctx["active_camera_name"] = None
+            except Exception:
+                pass
+
             # Scene list snapshot
             try:
                 scenes_data = []
@@ -227,6 +255,22 @@ def _build_context():
                         positive = getattr(sensor, "positive", False)
                         stype = getattr(sensor, "type", 0)
                         sentry = {{"positive": bool(positive), "type": int(stype)}}
+                        # Collision sensor: hitObjectList (list of {{name}} for JS hitObj.name)
+                        hit_list = getattr(sensor, "hitObjectList", None)
+                        if hit_list is not None:
+                            try:
+                                sentry["hitObjectList"] = [{{"name": getattr(o, "name", str(i))}} for i, o in enumerate(hit_list)]
+                            except Exception:
+                                sentry["hitObjectList"] = []
+                        elif "Collision" in type(sensor).__name__ or (sname and "ollision" in sname):
+                            try:
+                                hit_list = getattr(sensor, "hit_object_list", None)
+                                if hit_list is not None:
+                                    sentry["hitObjectList"] = [{{"name": getattr(o, "name", str(i))}} for i, o in enumerate(hit_list)]
+                                else:
+                                    sentry["hitObjectList"] = []
+                            except Exception:
+                                sentry["hitObjectList"] = []
 
                         # Keyboard: use sensor.inputs only (sensor.events is deprecated in UPBGE)
                         try:
@@ -353,6 +397,13 @@ def _build_context():
                 ctx["joystick"] = joy_ctx
             except Exception:
                 pass
+
+            # RayCast results from previous frame (one result per object)
+            try:
+                from upbge_nodejs_sdk.python.game_engine import script_handler
+                ctx["rayCastResults"] = getattr(script_handler, "_get_raycast_results", lambda: {{}})()
+            except Exception:
+                ctx["rayCastResults"] = {{}}
 
     except Exception:
         pass

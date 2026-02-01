@@ -467,6 +467,47 @@ function __bgeMakeGameObject(name) {{
             const targetName = target && target.name ? target.name : null;
             if (targetName) __bgeQueue({{ op: "lookAt", object: objName, target: targetName }});
         }},
+        rayCast(to, fromOpt, dist, prop, face, xray, mask) {{
+            const toArr = Array.isArray(to) && to.length >= 3 ? to : null;
+            if (toArr) __bgeQueueForObject("rayCast", objName, {{
+                to: toArr,
+                from: Array.isArray(fromOpt) && fromOpt.length >= 3 ? fromOpt : undefined,
+                dist: typeof dist === "number" ? dist : 0,
+                prop: typeof prop === "string" ? prop : "",
+                face: !!face,
+                xray: !!xray,
+                mask: typeof mask === "number" ? mask : 0xFFFF,
+            }});
+        }},
+        rayCastTo(target, dist, prop) {{
+            const ctx = __BGE_CONTEXT__ || {{}};
+            let t = target;
+            if (t && t.name) t = t.name;
+            if (t != null) __bgeQueueForObject("rayCastTo", objName, {{
+                target: typeof t === "string" ? t : (Array.isArray(t) && t.length >= 3 ? t : undefined),
+                dist: typeof dist === "number" ? dist : 0,
+                prop: typeof prop === "string" ? prop : "",
+            }});
+        }},
+        get lastRayCastResult() {{
+            const ctx = __BGE_CONTEXT__ || {{}};
+            const results = ctx.rayCastResults || {{}};
+            const r = results[objName];
+            if (!r) return {{ object: null, point: null, normal: null }};
+            return {{
+                object: r.object ? __bgeMakeGameObject(r.object) : null,
+                point: Array.isArray(r.point) ? r.point.slice() : null,
+                normal: Array.isArray(r.normal) ? r.normal.slice() : null,
+            }};
+        }},
+        setViewport(left, bottom, right, top) {{
+            __bgeQueueForObject("setViewport", objName, {{
+                left: parseInt(left, 10),
+                bottom: parseInt(bottom, 10),
+                right: parseInt(right, 10),
+                top: parseInt(top, 10),
+            }});
+        }},
     }};
 }}
 
@@ -504,6 +545,9 @@ function __bgeMakeScene(sceneNameOrData) {{
         getObject(objName) {{
             return __bgeMakeGameObject(objName);
         }},
+        get(objName) {{
+            return __bgeMakeGameObject(objName);
+        }},
         addObject(object) {{
             const oname = object && object.name ? object.name : null;
             if (oname) __bgeQueue({{ op: "sceneAddObject", scene: sceneName, object: oname }});
@@ -512,10 +556,71 @@ function __bgeMakeScene(sceneNameOrData) {{
             const oname = object && object.name ? object.name : null;
             if (oname) __bgeQueue({{ op: "sceneRemoveObject", scene: sceneName, object: oname }});
         }},
+        get activeCamera() {{
+            const ctx = __BGE_CONTEXT__ || {{}};
+            if (ctx.scene_name !== sceneName) return null;
+            const name = ctx.active_camera_name;
+            return name ? __bgeMakeGameObject(name) : null;
+        }},
+        set activeCamera(cam) {{
+            const name = cam && cam.name ? cam.name : null;
+            if (name) __bgeQueue({{ op: "setActiveCamera", scene: sceneName, object: name }});
+        }},
     }};
 }}
 
 const bge = {{
+    render: {{
+        getWindowWidth() {{
+            const ctx = __BGE_CONTEXT__ || {{}};
+            return typeof ctx.windowWidth === "number" ? ctx.windowWidth : 0;
+        }},
+        getWindowHeight() {{
+            const ctx = __BGE_CONTEXT__ || {{}};
+            return typeof ctx.windowHeight === "number" ? ctx.windowHeight : 0;
+        }},
+    }},
+    constraints: {{
+        setGravity(x, y, z) {{
+            const vec = Array.isArray(x) ? x : (arguments.length >= 3 ? [x, y, z] : [0, 0, -9.81]);
+            if (vec.length >= 3) __bgeQueue({{ op: "setGravity", vec: [Number(vec[0]), Number(vec[1]), Number(vec[2])] }});
+        }},
+        createVehicle(chassis) {{
+            const name = chassis && chassis.name ? chassis.name : null;
+            if (name) __bgeQueue({{ op: "createVehicle", scene: (__BGE_CONTEXT__ && __BGE_CONTEXT__.scene_name) || "", object: name }});
+        }},
+        vehicleApplyEngineForce(chassis, wheelIndex, force) {{
+            const name = chassis && chassis.name ? chassis.name : chassis;
+            if (name != null) __bgeQueue({{ op: "vehicleApplyEngineForce", object: name, wheelIndex: parseInt(wheelIndex, 10), force: Number(force) }});
+        }},
+        vehicleSetSteeringValue(chassis, wheelIndex, value) {{
+            const name = chassis && chassis.name ? chassis.name : chassis;
+            if (name != null) __bgeQueue({{ op: "vehicleSetSteeringValue", object: name, wheelIndex: parseInt(wheelIndex, 10), value: Number(value) }});
+        }},
+        vehicleAddWheel(chassis, wheel, connectionPoint, downDir, axleDir, suspensionRestLength, wheelRadius, hasSteering) {{
+            const cName = chassis && chassis.name ? chassis.name : chassis;
+            const wName = wheel && wheel.name ? wheel.name : wheel;
+            if (cName && wName != null) __bgeQueue({{ op: "vehicleAddWheel", object: cName, wheel: wName, attachPos: Array.isArray(connectionPoint) ? connectionPoint : [0,0,0], downDir: Array.isArray(downDir) ? downDir : [0,0,-1], axleDir: Array.isArray(axleDir) ? axleDir : [0,1,0], suspensionRestLength: Number(suspensionRestLength) || 0.5, wheelRadius: Number(wheelRadius) || 0.4, hasSteering: !!hasSteering }});
+        }},
+        vehicleApplyBraking(chassis, wheelIndex, force) {{
+            const name = chassis && chassis.name ? chassis.name : chassis;
+            if (name != null) __bgeQueue({{ op: "vehicleApplyBraking", object: name, wheelIndex: parseInt(wheelIndex, 10), force: Number(force) }});
+        }},
+        characterJump(character) {{
+            const name = character && character.name ? character.name : character;
+            if (name) __bgeQueue({{ op: "characterJump", scene: (__BGE_CONTEXT__ && __BGE_CONTEXT__.scene_name) || "", object: name }});
+        }},
+        characterWalkDirection(character, vec) {{
+            const name = character && character.name ? character.name : character;
+            const v = Array.isArray(vec) && vec.length >= 3 ? vec : [0, 0, 0];
+            if (name) __bgeQueue({{ op: "characterWalkDirection", scene: (__BGE_CONTEXT__ && __BGE_CONTEXT__.scene_name) || "", object: name, vec: [Number(v[0]), Number(v[1]), Number(v[2])] }});
+        }},
+        characterSetVelocity(character, vec, time, local) {{
+            const name = character && character.name ? character.name : character;
+            const v = Array.isArray(vec) && vec.length >= 3 ? vec : [0, 0, 0];
+            if (name) __bgeQueue({{ op: "characterSetVelocity", scene: (__BGE_CONTEXT__ && __BGE_CONTEXT__.scene_name) || "", object: name, value: [Number(v[0]), Number(v[1]), Number(v[2])], time: Number(time) || 0.2, local: !!local }});
+        }},
+    }},
     logic: {{
         getCurrentScene() {{
             return __bgeMakeScene();
@@ -531,14 +636,24 @@ const bge = {{
         getCurrentController() {{
             const ctx = __BGE_CONTEXT__ || {{}};
             const sensors = ctx.sensors || {{}};
+            const actuatorNames = Array.isArray(ctx.actuators) ? ctx.actuators : [];
+            const actuators = {{}};
+            actuatorNames.forEach(function(n) {{ actuators[n] = {{ name: n }}; }});
             return {{
                 name: ctx.controller_name || "",
                 type: "PYTHON",
                 active: true,
                 owner: __bgeMakeGameObject(),
-                get sensors() {{
-                    return sensors;
-                }}
+                get sensors() {{ return sensors; }},
+                get actuators() {{ return actuators; }},
+                activate(actuator) {{
+                    const name = (typeof actuator === "string") ? actuator : (actuator && actuator.name);
+                    if (name) __bgeQueue({{ op: "activate", scene: ctx.scene_name || "", object: ctx.object_name || "", actuator: name }});
+                }},
+                deactivate(actuator) {{
+                    const name = (typeof actuator === "string") ? actuator : (actuator && actuator.name);
+                    if (name) __bgeQueue({{ op: "deactivate", scene: ctx.scene_name || "", object: ctx.object_name || "", actuator: name }});
+                }},
             }};
         }},
         getCurrentObject() {{

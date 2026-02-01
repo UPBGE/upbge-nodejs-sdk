@@ -20,7 +20,7 @@ def get_version():
     """Obtém a versão do add-on do __init__.py."""
     init_file = Path(__file__).parent.parent / "__init__.py"
     if not init_file.exists():
-        return "1.0.0"
+        return "0.0.1"
     
     with open(init_file, 'r', encoding='utf-8') as f:
         for line in f:
@@ -30,7 +30,7 @@ def get_version():
                 version = '.'.join(p.strip() for p in parts)
                 return version
     
-    return "1.0.0"
+    return "0.0.1"
 
 
 def check_required_files(base_dir):

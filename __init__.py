@@ -11,7 +11,7 @@ bl_info = {
     "location": "Properties -> Render -> UPBGE Player",
     "description": "Node.js SDK for UPBGE Game Engine",
     "author": "UPBGE Contributors",
-    "version": (1, 0, 0),
+    "version": (0, 0, 1),
     "blender": (5, 0, 0),
     "doc_url": "https://github.com/UPBGE/upbge-nodejs-sdk/wiki",
     "tracker_url": "https://github.com/UPBGE/upbge-nodejs-sdk/issues"

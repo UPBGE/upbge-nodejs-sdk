@@ -1,102 +1,114 @@
 # UPBGE JavaScript SDK
 
-SDK completo para suporte JavaScript no UPBGE Game Engine, totalmente independente do core do UPBGE.
+Full SDK for JavaScript support in the UPBGE Game Engine, fully independent of the UPBGE core.
 
-## Visão Geral
+## Overview
 
-Este SDK fornece suporte para desenvolvimento JavaScript no UPBGE, incluindo:
+This SDK provides JavaScript development support in UPBGE, including:
 
-- **Console Interativo**: Console JavaScript para testar código rapidamente
-- **Integração com Editor Externo**: Abertura rápida do SDK/projeto em VS Code, Cursor ou editor personalizado
-- **Type Definitions**: Definições de tipos em `types/` para uso opcional em editores que suportam JSDoc / `.d.ts`
-- **Game Engine Integration**: Integração com controllers JavaScript no game engine
+- **Interactive Console**: JavaScript console for quick code testing
+- **External Editor Integration**: Quick open of the SDK/project in VS Code, Cursor, or a custom editor
+- **Type Definitions**: Type definitions in `types/` for optional use in editors that support JSDoc / `.d.ts`
+- **Game Engine Integration**: Integration with JavaScript controllers in the game engine
 
-## Instalação
+## Installation
 
-### Para Usuários Finais (Recomendado)
+### For End Users (Recommended)
 
-**Método Plug-and-Play**: Baixe o pacote oficial `upbge-javascript-sdk-X.X.X.zip` que inclui todos os binários necessários. Veja a seção "Opção 2" abaixo.
+**Plug-and-Play**: Download the official `upbge-javascript-sdk-X.X.X.zip` package, which includes all required binaries. See the "Option 2" section below.
 
-### Para Desenvolvedores
+### For Developers
 
-Se você está desenvolvendo ou contribuindo para o SDK, você precisará instalar as dependências manualmente:
+If you are developing or contributing to the SDK, you will need to install dependencies manually:
 
-1. **Estrutura de Diretórios**: Execute `python scripts/setup_sdk.py`
-2. **Node.js**: Execute `python scripts/download_dependencies.py` ou instale manualmente (veja `INSTALL_DEPENDENCIES.md` se necessário)
+1. **Directory structure**: Run `python scripts/setup_sdk.py`
+2. **Node.js**: Run `python scripts/download_dependencies.py` or install manually (see `INSTALL_DEPENDENCIES.md` if needed)
 
-### Opção 1: Instalação Manual
+### Option 1: Manual installation
 
-1. Clone ou baixe este repositório
-2. Execute `python scripts/setup_sdk.py` para criar estrutura de diretórios
-3. Instale dependências (Node.js) - veja `INSTALL_DEPENDENCIES.md` apenas se quiser instalar ferramentas extras
-4. No Blender, vá em **Edit → Preferences → Add-ons**
-5. Clique em **Install...** e selecione a pasta `upbge-javascript`
-6. Ative o add-on "UPBGE JavaScript SDK"
-7. Configure o caminho do SDK nas preferências do add-on
+1. Clone or download this repository
+2. Run `python scripts/setup_sdk.py` to create the directory structure
+3. Install dependencies (Node.js) — see `INSTALL_DEPENDENCIES.md` only if you want to install extra tools
+4. In Blender, go to **Edit → Preferences → Add-ons**
+5. Click **Install...** and select the `upbge-javascript` folder
+6. Enable the "UPBGE JavaScript SDK" add-on
+7. Configure the SDK path in the add-on preferences
 
-### Opção 2: Instalação via Add-on (ZIP) - Recomendado
+### Option 2: Add-on installation (ZIP) — Recommended
 
-1. **Baixe o pacote oficial** `upbge-javascript-sdk-X.X.X.zip` (inclui todos os binários)
-2. No Blender/UPBGE, vá em **Edit → Preferences → Add-ons**
-3. Clique em **Install...** e selecione o arquivo ZIP baixado
-4. Ative o add-on "UPBGE JavaScript SDK"
-5. **Pronto!** O SDK está funcionando (plug-and-play, sem necessidade de instalar dependências extras)
+1. **Download the official package** `upbge-javascript-sdk-X.X.X.zip` (includes all binaries)
+2. In Blender/UPBGE, go to **Edit → Preferences → Add-ons**
+3. Click **Install...** and select the downloaded ZIP file
+4. Enable the "UPBGE JavaScript SDK" add-on
+5. **Done!** The SDK is ready (plug-and-play, no extra dependencies to install)
 
-**Nota para Desenvolvedores**: Para criar um pacote de distribuição com todos os binários incluídos, execute:
+**Note for developers**: To build a distribution package with all binaries included, run:
 ```bash
 python scripts/build_package.py
 ```
 
-Isso criará um arquivo ZIP pronto para distribuição, incluindo o add-on e o runtime Node.js.
+This will create a ZIP file ready for distribution, including the add-on and the Node.js runtime.
 
-### Guia Rápido
+### Quick start
 
-Para um guia rápido de setup, consulte `SETUP.md`.
+For a quick setup guide, see `SETUP.md`.
 
-## Configuração
+## Configuration
 
-### Configurar SDK Path
+### Configure SDK path
 
-1. Abra **Edit → Preferences → Add-ons**
-2. Selecione "UPBGE Node.js SDK"
-3. Configure o **SDK Path** para o diretório do SDK
-4. O SDK será carregado automaticamente
+1. Open **Edit → Preferences → Add-ons**
+2. Select "UPBGE Node.js SDK"
+3. Set **SDK Path** to the SDK directory
+4. The SDK will load automatically
 
-### Opções de SDK Path
+### SDK path options
 
-O SDK pode ser configurado de três formas (em ordem de prioridade):
+The SDK can be configured in three ways (in order of priority):
 
-1. **Variável de Ambiente**: `BGE_JAVASCRIPT_SDK` (caminho absoluto)
-2. **SDK Local**: `./bge_js_sdk/` relativo ao arquivo .blend
-3. **Preferências**: Caminho configurado nas preferências do add-on
+1. **Environment variable**: `BGE_JAVASCRIPT_SDK` (absolute path)
+2. **Local SDK**: `./bge_js_sdk/` relative to the .blend file
+3. **Preferences**: Path set in the add-on preferences
 
-## Estrutura do SDK
+### Persistent worker
+
+By default, each time a JavaScript controller runs, the add-on starts a new Node.js process, runs your script, and then exits. For games with many controllers or heavy logic, that can add overhead.
+
+You can enable **Use Persistent Worker** in the add-on preferences (**Edit → Preferences → Add-ons → UPBGE Node.js SDK → Advanced Settings**). When enabled:
+
+- A single Node.js process is kept running for the whole game session.
+- Scripts are sent to this process over stdin instead of spawning a new process per frame.
+- This reduces the cost of starting Node.js repeatedly and can improve performance when many controllers run every frame.
+
+The option is off by default so that the default behavior stays simple (one process per run). Turn it on if you notice lag or high CPU from frequent controller execution.
+
+## SDK structure
 
 ```
 upbge-javascript/
-├── __init__.py              # Add-on principal
-├── python/                   # Módulos Python
-│   ├── console/             # Console JavaScript
-│   ├── runtime/             # Runtime JavaScript (Node.js wrapper)
-│   └── game_engine/         # Integração com game engine
-├── runtime/                  # Node.js executáveis
+├── __init__.py              # Main add-on
+├── python/                   # Python modules
+│   ├── console/             # JavaScript console
+│   ├── runtime/             # JavaScript runtime (Node.js wrapper)
+│   └── game_engine/         # Game engine integration
+├── runtime/                  # Node.js executables
 │   ├── windows/
 │   ├── linux/
 │   └── macos/
-├── lib/                      # (Opcional) bibliotecas e ferramentas adicionais
-└── types/                    # Type definitions para uso em editores
+├── lib/                      # (Optional) additional libraries and tools
+└── types/                    # Type definitions for use in editors
     └── bge.d.ts
 ```
 
-## Uso
+## Usage
 
-### Console JavaScript
+### JavaScript console
 
-1. Abra o **Console** no Blender (Window → Toggle System Console ou Shift+F4)
-2. No menu de linguagem do console, selecione **JavaScript**
-3. Digite código e pressione Enter para executar
+1. Open the **Console** in Blender (Window → Toggle System Console or Shift+F4)
+2. In the console language menu, select **JavaScript**
+3. Type code and press Enter to run it
 
-**Exemplo JavaScript:**
+**JavaScript example:**
 ```javascript
 >>> console.log("Hello, UPBGE!")
 Hello, UPBGE!
@@ -104,13 +116,13 @@ Hello, UPBGE!
 30
 ```
 
-### Controllers JavaScript
+### JavaScript controllers
 
-1. No **Logic Editor**, adicione um **JavaScript Controller**
-2. Selecione o controller e configure um script JavaScript usando o painel do add-on
-3. O código será executado no game engine via Node.js
+1. In the **Logic Editor**, add a **JavaScript Controller**
+2. Select the controller and configure a JavaScript script using the add-on panel
+3. The code runs in the game engine via Node.js
 
-**Exemplo Controller:**
+**Controller example:**
 ```javascript
 // Move object forward
 let obj = bge.logic.getCurrentObject();
@@ -119,45 +131,91 @@ if (obj) {
 }
 ```
 
-### Type Definitions (opcional)
+### Type definitions (optional)
 
-O diretório `types/` contém arquivos `.d.ts` opcionais para autocomplete em editores que suportam JSDoc/definições de tipos. Não são usados pelo add-on em tempo de execução.
+The `types/` directory contains optional `.d.ts` files for autocomplete in editors that support JSDoc/type definitions. They are not used by the add-on at runtime.
 
-## Requisitos
+### Using TypeScript
 
-- **UPBGE**: Versão 5.0 ou superior
-- **Node.js**: Incluído no SDK (não requer instalação externa)
+To use TypeScript (or get full type checking and IntelliSense for the BGE API in JavaScript), include the SDK type definitions in your project. Add the files under `types/` to your `tsconfig.json` so the compiler and editor pick up the `bge` namespace and related types.
 
-## Desenvolvimento
+**Option A — SDK as part of your project**  
+If the SDK lives inside your project (e.g. in a subfolder), add the `types` folder to `include`:
 
-### Estrutura do Código
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "strict": true
+  },
+  "include": [
+    "src/**/*",
+    "path/to/upbge-nodejs-sdk/types/**/*.d.ts"
+  ]
+}
+```
 
-- `python/console/`: Console JavaScript
-- `python/runtime/`: Wrapper Node.js para execução
-- `python/game_engine/`: Integração com controllers
+**Option B — SDK installed elsewhere**  
+If the SDK is in another directory (e.g. add-on path), use `typeRoots` or a direct path in `include` so your `tsconfig.json` points at the SDK `types`:
 
-### Contribuindo
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "strict": true,
+    "typeRoots": ["./node_modules/@types", "C:/path/to/sdk/types"]
+  },
+  "include": ["src/**/*"]
+}
+```
 
-Contribuições são bem-vindas! Por favor:
+Or reference the definition files explicitly:
 
-1. Faça fork do repositório
-2. Crie uma branch para sua feature
-3. Faça commit das mudanças
-4. Abra um Pull Request
+```json
+{
+  "include": ["src/**/*", "C:/path/to/sdk/types/index.d.ts"]
+}
+```
 
-## Licença
+Replace `C:/path/to/sdk` with the actual path to your SDK (or use a relative path). After that, types like `bge.logic`, `bge.constraints`, `GameObject`, and `Scene` will be available for autocomplete and type checking. The game engine still runs the compiled JavaScript (or the add-on’s JS runtime); the `.d.ts` files are only for development.
 
-GPL-2.0-or-later (mesma licença do UPBGE)
+## Requirements
+
+- **UPBGE**: Version 5.0 or later
+- **Node.js**: Included in the SDK (no external installation required)
+
+## Development
+
+### Code structure
+
+- `python/console/`: JavaScript console
+- `python/runtime/`: Node.js wrapper for execution
+- `python/game_engine/`: Controller integration
+
+### Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a branch for your feature
+3. Commit your changes
+4. Open a Pull Request
+
+## License
+
+GPL-2.0-or-later (same license as UPBGE)
 
 ## Links
 
-- [Documentação](https://github.com/UPBGE/upbge-javascript-sdk/wiki)
+- [Documentation](https://github.com/UPBGE/upbge-javascript-sdk/wiki)
 - [Issues](https://github.com/UPBGE/upbge-javascript-sdk/issues)
 - [UPBGE](https://upbge.org/)
 
-## Notas
+## Notes
 
-- O SDK é totalmente independente do UPBGE core
-- Node.js é incluído no SDK
-- O SDK pode ser atualizado independentemente do UPBGE
-- Suporte a múltiplas versões do SDK por projeto
+- The SDK is fully independent of the UPBGE core
+- Node.js is included in the SDK
+- The SDK can be updated independently of UPBGE
+- Support for multiple SDK versions per project

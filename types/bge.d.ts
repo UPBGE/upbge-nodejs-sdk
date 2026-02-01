@@ -9,6 +9,30 @@
 
 declare namespace bge {
     /**
+     * Render module - viewport / window size
+     */
+    namespace render {
+        function getWindowWidth(): number;
+        function getWindowHeight(): number;
+    }
+    
+    /**
+     * Constraints - physics vehicle, character, gravity
+     */
+    namespace constraints {
+        function setGravity(x: number, y: number, z: number): void;
+        function setGravity(vec: [number, number, number]): void;
+        function createVehicle(chassis: GameObject): void;
+        function vehicleApplyEngineForce(chassis: GameObject | string, wheelIndex: number, force: number): void;
+        function vehicleSetSteeringValue(chassis: GameObject | string, wheelIndex: number, value: number): void;
+        function vehicleAddWheel(chassis: GameObject | string, wheel: GameObject | string, connectionPoint: [number, number, number], downDir: [number, number, number], axleDir: [number, number, number], suspensionRestLength: number, wheelRadius: number, hasSteering: boolean): void;
+        function vehicleApplyBraking(chassis: GameObject | string, wheelIndex: number, force: number): void;
+        function characterJump(character: GameObject | string): void;
+        function characterWalkDirection(character: GameObject | string, vec: [number, number, number]): void;
+        function characterSetVelocity(character: GameObject | string, vec: [number, number, number], time: number, local?: boolean): void;
+    }
+    
+    /**
      * Logic module - provides access to game logic, scenes, objects, etc.
      */
     namespace logic {
@@ -72,6 +96,11 @@ declare namespace bge {
         getObject(name: string): GameObject | null;
         
         /**
+         * Get object by name (alias for getObject)
+         */
+        get(name: string): GameObject | null;
+        
+        /**
          * Add object to scene
          */
         addObject(object: GameObject): void;
@@ -80,6 +109,20 @@ declare namespace bge {
          * Remove object from scene
          */
         removeObject(object: GameObject): void;
+        
+        /**
+         * Active camera (get/set by GameObject)
+         */
+        activeCamera: GameObject | null;
+    }
+    
+    /**
+     * RayCast result (available on next frame via lastRayCastResult)
+     */
+    interface RayCastResult {
+        object: GameObject | null;
+        point: [number, number, number] | null;
+        normal: [number, number, number] | null;
     }
     
     /**
@@ -115,6 +158,47 @@ declare namespace bge {
          * Get children objects
          */
         getChildren(): GameObject[];
+        
+        /**
+         * Orient object to look at target (world position or GameObject)
+         */
+        lookAt(target: GameObject): void;
+        
+        /**
+         * Set viewport for camera (left, bottom, right, top in pixels)
+         */
+        setViewport(left: number, bottom: number, right: number, top: number): void;
+        
+        /**
+         * Ray cast to point [x,y,z]; result in lastRayCastResult next frame
+         */
+        rayCast(to: [number, number, number], from?: [number, number, number] | null, dist?: number, prop?: string, face?: boolean, xray?: boolean, mask?: number): void;
+        
+        /**
+         * Ray cast toward target (GameObject or [x,y,z]); result in lastRayCastResult next frame
+         */
+        rayCastTo(target: GameObject | [number, number, number], dist?: number, prop?: string): void;
+        
+        /**
+         * Last rayCast/rayCastTo result (from previous frame)
+         */
+        readonly lastRayCastResult: RayCastResult;
+    }
+    
+    /**
+     * Actuator reference (name only; use with activate/deactivate)
+     */
+    interface ActuatorRef {
+        name: string;
+    }
+    
+    /**
+     * Sensor entry (positive, type, hitObjectList for collision)
+     */
+    interface SensorEntry {
+        positive: boolean;
+        type: number;
+        hitObjectList?: Array<{ name: string }>;
     }
     
     /**
@@ -124,6 +208,11 @@ declare namespace bge {
         name: string;
         type: string;
         active: boolean;
+        owner: GameObject;
+        sensors: { [sensorName: string]: SensorEntry };
+        actuators: { [actuatorName: string]: ActuatorRef };
+        activate(actuator: ActuatorRef | string): void;
+        deactivate(actuator: ActuatorRef | string): void;
     }
     
     /**

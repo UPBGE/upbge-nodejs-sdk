@@ -1,53 +1,53 @@
-# Instruções para Instalar Dependências do SDK
+# SDK Dependencies Installation
 
-Este documento explica como instalar Node.js no SDK (quando não usar o pacote pré-empacotado).
+This document explains how to install Node.js for the SDK (when not using the pre-packaged bundle).
 
-## Pré-requisitos
+## Prerequisites
 
-- Acesso à internet para baixar os binários
-- Ferramentas para extrair arquivos (7-Zip, tar, etc.)
+- Internet access to download binaries
+- Tools to extract archives (7-Zip, tar, etc.)
 
-## Opção 1: Instalação Manual
+## Option 1: Manual installation
 
-### Instalar Node.js
+### Install Node.js
 
-#### Windows:
-1. Baixe Node.js LTS (v20.x ou v22.x) de https://nodejs.org/
-2. Baixe a versão "Windows Binary (.zip)" para x64
-3. Extraia o arquivo ZIP
-4. Copie `node.exe` para `runtime/windows/node.exe`
+#### Windows
+1. Download Node.js LTS (v20.x or v22.x) from https://nodejs.org/
+2. Download the "Windows Binary (.zip)" build for x64
+3. Extract the ZIP file
+4. Copy `node.exe` to `runtime/windows/node.exe`
 
-#### Linux:
-1. Baixe Node.js LTS de https://nodejs.org/
-2. Baixe a versão "Linux Binary (x64)" (.tar.xz)
-3. Extraia: `tar -xf node-v*.tar.xz`
-4. Copie o binário `node` para `runtime/linux/node-linux64`
-5. Torne executável: `chmod +x runtime/linux/node-linux64`
+#### Linux
+1. Download Node.js LTS from https://nodejs.org/
+2. Download the "Linux Binary (x64)" build (.tar.xz)
+3. Extract: `tar -xf node-v*.tar.xz`
+4. Copy the `node` binary to `runtime/linux/node-linux64`
+5. Make it executable: `chmod +x runtime/linux/node-linux64`
 
-#### macOS:
-1. Baixe Node.js LTS de https://nodejs.org/
-2. Baixe a versão "macOS Binary (x64)" (.tar.gz)
-3. Extraia: `tar -xzf node-v*.tar.gz`
-4. Copie o binário `node` para `runtime/macos/node-osx`
-5. Torne executável: `chmod +x runtime/macos/node-osx`
+#### macOS
+1. Download Node.js LTS from https://nodejs.org/
+2. Download the "macOS Binary (x64)" build (.tar.gz)
+3. Extract: `tar -xzf node-v*.tar.gz`
+4. Copy the `node` binary to `runtime/macos/node-osx`
+5. Make it executable: `chmod +x runtime/macos/node-osx`
 
-## Opção 2: Script de Download
+## Option 2: Download script
 
-Use o script do SDK para baixar Node.js:
+Use the SDK script to download Node.js:
 
 ```bash
 python scripts/download_dependencies.py
 ```
 
-## Verificação
+## Verification
 
-Após instalar, verifique se o arquivo existe:
+After installing, confirm the file exists:
 
 - `runtime/windows/node.exe` (Windows)
 - `runtime/linux/node-linux64` (Linux)
 - `runtime/macos/node-osx` (macOS)
 
-## Notas
+## Notes
 
-- Use sempre versões LTS do Node.js para estabilidade
-- Os binários devem ser executáveis (Linux/macOS)
+- Use Node.js LTS versions for stability
+- Binaries must be executable (Linux/macOS)
