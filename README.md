@@ -42,6 +42,8 @@ If you are developing or contributing to the SDK, you will need to install depen
 4. Enable the "UPBGE JavaScript SDK" add-on
 5. **Done!** The SDK is ready (plug-and-play, no extra dependencies to install)
 
+![How to install](./assets/upbge-nodejs-sdk-installation.gif)
+
 **Note for developers**: To build a distribution package with all binaries included, run:
 ```bash
 python scripts/build_package.py
