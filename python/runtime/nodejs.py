@@ -7,12 +7,14 @@
 import sys
 import os
 import subprocess
-import platform
 
 try:
     import bpy
 except ImportError:
     bpy = None
+
+# Import centralized path utilities
+from utils.paths import get_sdk_root, get_node_executable
 
 # Set to False to disable Node runtime flow logs
 DEBUG_NODE_LOGS = True
@@ -24,74 +26,25 @@ def _node_log(msg):
 
 
 def get_sdk_path():
-    """Get the SDK path from preferences or auto-detect."""
-    if bpy:
-        try:
-            preferences = bpy.context.preferences
-            addon_prefs = preferences.addons["upbge_nodejs_sdk"].preferences
-            sdk_path = addon_prefs.sdk_path
-            if sdk_path:
-                return sdk_path
-        except:
-            pass
-    
-    # Fallback: try to get from addon location (when installed via ZIP)
+    """Get the SDK path from preferences or auto-detect.
+
+    Deprecated: Use get_sdk_root() from utils.paths instead.
+    This function is kept for backward compatibility.
+    """
     try:
-        # Go up from python/runtime/nodejs.py to the addon root
-        addon_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        
-        # Check if this addon directory has SDK structure
-        has_sdk_structure = (
-            os.path.exists(os.path.join(addon_path, "python")) and
-            os.path.exists(os.path.join(addon_path, "runtime"))
-        )
-        
-        if has_sdk_structure:
-            return addon_path
-    except:
-        pass
-    
-    return ""
+        context = bpy.context if bpy else None
+        return get_sdk_root(context=context)
+    except Exception:
+        return get_sdk_root()
 
 
 def get_node_path():
-    """Get the path to Node.js executable from the SDK."""
-    sdk_path = get_sdk_path()
-    if not sdk_path:
-        return None
-    
-    os_type = platform.system()
-    
-    if os_type == "Windows":
-        node_path = os.path.join(sdk_path, "runtime", "windows", "node.exe")
-    elif os_type == "Darwin":
-        node_path = os.path.join(sdk_path, "runtime", "macos", "node-osx")
-    else:  # Linux
-        node_path = os.path.join(sdk_path, "runtime", "linux", "node-linux64")
-    
-    if os.path.exists(node_path):
-        return node_path
-    
-    # Fallback: try system Node.js
-    if os_type == "Windows":
-        possible_paths = [
-            os.path.join(os.environ.get("ProgramFiles", ""), "nodejs", "node.exe"),
-            os.path.join(os.environ.get("ProgramFiles(x86)", ""), "nodejs", "node.exe"),
-            os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "nodejs", "node.exe"),
-        ]
-        for path in possible_paths:
-            if os.path.exists(path):
-                return path
-    else:
-        # Try system PATH
-        try:
-            result = subprocess.run(["which", "node"], capture_output=True, text=True, timeout=1)
-            if result.returncode == 0:
-                return result.stdout.strip()
-        except:
-            pass
-    
-    return None
+    """Get the path to Node.js executable from the SDK.
+
+    Deprecated: Use get_node_executable() from utils.paths instead.
+    This function is kept for backward compatibility.
+    """
+    return get_node_executable()
 
 
 class NodeJSRuntime:
