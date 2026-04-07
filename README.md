@@ -80,7 +80,10 @@ For details, see [CI/CD Setup Guide](.github/CI_CD_SETUP.md).
 ### Running Tests Locally
 
 ```bash
-# Install test dependencies
+# Install test dependencies (recommended)
+pip install -r requirements-dev.txt
+
+# Or install individually
 pip install pytest pytest-cov coverage
 
 # Run all tests
