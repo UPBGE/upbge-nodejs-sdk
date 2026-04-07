@@ -43,9 +43,9 @@ class SDKAddonPreferences(AddonPreferences):
         except Exception:
             pass
 
-    skip_update: BoolProperty(name="", default=False)
+    skip_update = BoolProperty(name="", default=False)
 
-    sdk_path: StringProperty(
+    sdk_path = StringProperty(
         name="SDK Path",
         subtype="FILE_PATH",
         update=sdk_path_update,
@@ -54,7 +54,7 @@ class SDKAddonPreferences(AddonPreferences):
     )
 
     # External editor integration
-    code_editor: EnumProperty(
+    code_editor = EnumProperty(
         name="External Editor",
         description="Editor externo para abrir projetos/scripts do SDK",
         items=[
@@ -63,27 +63,27 @@ class SDKAddonPreferences(AddonPreferences):
         default="custom",
     )
 
-    code_editor_bin: StringProperty(
+    code_editor_bin = StringProperty(
         name="Editor Executable",
         subtype="FILE_PATH",
         default="",
         description="Path to external editor executable (only used when External Editor is set to Custom)",
     )
 
-    nodejs_path: StringProperty(
+    nodejs_path = StringProperty(
         name="Node.js Path",
         subtype="FILE_PATH",
         default="",
         description="Path to Node.js executable (auto-detected from SDK)",
     )
 
-    auto_update: BoolProperty(
+    auto_update = BoolProperty(
         name="Auto Update SDK",
         default=False,
         description="Automatically update SDK when new version is available",
     )
 
-    use_persistent_worker: BoolProperty(
+    use_persistent_worker = BoolProperty(
         name="Use Persistent Worker",
         default=False,
         description="Keep one Node process per game session (better performance, one process per frame instead of spawn)",

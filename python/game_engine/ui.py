@@ -8,6 +8,10 @@ import bpy
 from bpy.props import IntProperty, StringProperty
 from bpy.types import Operator, Panel
 
+# Property option flags
+HIDDEN = {"HIDDEN"}
+FILE_PATH = "FILE_PATH"
+
 
 class LOGIC_OT_add_javascript_controller(Operator):
     """Add a JavaScript controller (uses Python controller internally)"""
@@ -48,7 +52,7 @@ class LOGIC_OT_setup_js_controller(Operator):
     bl_description = "Configure controller to execute JavaScript via wrapper"
     bl_options = {"REGISTER", "UNDO"}
 
-    controller_index: bpy.props.IntProperty(name="Controller Index", default=-1)
+    controller_index = bpy.props.IntProperty(name="Controller Index", default=-1)
 
     def execute(self, context):
         # Import python_wrapper from the same directory
@@ -109,14 +113,14 @@ class LOGIC_OT_load_js_from_file(Operator):
     bl_description = "Load a .js/.mjs file from disk and assign it to this controller"
     bl_options = {"REGISTER", "UNDO"}
 
-    controller_name: StringProperty(name="Controller Name")
-    filter_glob: StringProperty(
+    controller_name = StringProperty(name="Controller Name")
+    filter_glob = StringProperty(
         default="*.js;*.mjs",
-        options={"HIDDEN"},
+        options=HIDDEN,
     )
-    filepath: StringProperty(
+    filepath = StringProperty(
         name="File Path",
-        subtype="FILE_PATH",
+        subtype=FILE_PATH,
     )
 
     def invoke(self, context, event):
