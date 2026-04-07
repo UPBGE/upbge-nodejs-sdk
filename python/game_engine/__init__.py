@@ -47,11 +47,14 @@ def register():
 def unregister():
     """Unregister game engine modules."""
     import sys
-    
-    ui = sys.modules.get("ui")
-    script_handler = sys.modules.get("script_handler")
-    controller = sys.modules.get("controller")
-    
-    ui.unregister()
-    script_handler.unregister()
-    controller.unregister()
+
+    ui = sys.modules.get("game_engine.ui")
+    script_handler = sys.modules.get("game_engine.script_handler")
+    controller = sys.modules.get("game_engine.controller")
+
+    if controller:
+        controller.unregister()
+    if script_handler:
+        script_handler.unregister()
+    if ui:
+        ui.unregister()
