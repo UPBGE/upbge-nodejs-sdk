@@ -4,19 +4,16 @@ Tests the centralized path resolution logic used across the SDK.
 """
 
 import os
-import pytest
 import sys
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Add python directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "python"))
 
-from utils.paths import (
-    get_platform,
-    get_sdk_root,
-    get_node_executable,
-    resolve_sdk_path,
-)
+from utils.paths import (get_node_executable, get_platform, get_sdk_root,
+                         resolve_sdk_path)
 
 
 class TestGetPlatform:

@@ -7,11 +7,11 @@ Tests for utils/logging module.
 Tests centralized logging configuration and environment variable control.
 """
 
-import sys
-import os
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 import logging
+import os
+import sys
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 

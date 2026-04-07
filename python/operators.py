@@ -5,9 +5,10 @@
 """SDK operators for installation and management."""
 
 import os
-import sys
-import bpy
 import subprocess
+import sys
+
+import bpy
 from bpy.types import Operator
 
 

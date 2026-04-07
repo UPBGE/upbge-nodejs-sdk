@@ -7,9 +7,10 @@ Esse teste é crítico porque:
 3. Testa suporte ao formato de worker (com ID prefixado)
 """
 
-import pytest
-import sys
 import os
+import sys
+
+import pytest
 
 # Adicionar diretório python ao path para imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "python"))

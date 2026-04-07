@@ -7,22 +7,19 @@ Tests for context_builder module.
 Tests extraction and building of BGE context for JS runtime.
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add python directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "python"))
 
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
 # Import context builder
-from game_engine.context_builder import (
-    build_context,
-    _get_engine_info,
-    _get_object_info,
-)
+from game_engine.context_builder import (_get_engine_info, _get_object_info,
+                                         build_context)
 
 
 class TestGetEngineInfo:

@@ -5,6 +5,7 @@
 """SDK preferences and settings."""
 
 import os
+
 import bpy
 from bpy.props import *
 from bpy.types import AddonPreferences
@@ -28,8 +29,8 @@ class SDKAddonPreferences(AddonPreferences):
         except ImportError:
             # Durante desenvolvimento, o diretório pode ter nome diferente
             # Tentar encontrar o módulo do add-on através do sys.modules
-            import sys
             import os
+            import sys
 
             addon_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             addon_dir_name = (

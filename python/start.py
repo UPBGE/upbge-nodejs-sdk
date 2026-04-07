@@ -4,15 +4,16 @@
 
 """SDK startup module - registers all SDK components."""
 
-import sys
 import os
+import sys
+
 import bpy
 
 
 def register(local_sdk=False):
     """Register all SDK components."""
-    import sys
     import os
+    import sys
 
     # Get the directory where this file is located (python/)
     # This allows imports to work whether start.py is imported as a module or directly

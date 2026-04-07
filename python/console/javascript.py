@@ -11,8 +11,9 @@ __all__ = (
     "language_id",
 )
 
-import sys
 import os
+import sys
+
 import bpy
 from runtime.nodejs import NodeJSRuntime
 

@@ -6,8 +6,8 @@
 Tests for game_engine/__init__.py register/unregister functions.
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 

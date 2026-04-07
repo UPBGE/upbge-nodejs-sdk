@@ -11,9 +11,9 @@ import sys
 
 def register():
     """Register console modules."""
-    import sys
-    import os
     import importlib.util
+    import os
+    import sys
 
     # Get the directory where this file is located
     console_dir = os.path.dirname(os.path.abspath(__file__))

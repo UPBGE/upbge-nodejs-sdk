@@ -8,10 +8,11 @@ Esse teste é crítico porque:
 4. Fornece base para refatoração com dispatch pattern
 """
 
-import pytest
-import sys
 import os
-from unittest.mock import patch, MagicMock
+import sys
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Adicionar diretório python ao path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "python"))

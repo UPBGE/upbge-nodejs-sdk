@@ -5,8 +5,8 @@
 """UI panels and operators for JavaScript controllers in Logic Editor."""
 
 import bpy
-from bpy.types import Panel, Operator
 from bpy.props import IntProperty, StringProperty
+from bpy.types import Operator, Panel
 
 
 class LOGIC_OT_add_javascript_controller(Operator):
@@ -52,9 +52,9 @@ class LOGIC_OT_setup_js_controller(Operator):
 
     def execute(self, context):
         # Import python_wrapper from the same directory
-        import sys
-        import os
         import importlib.util
+        import os
+        import sys
 
         # Get the directory where this file is located
         game_engine_dir = os.path.dirname(os.path.abspath(__file__))

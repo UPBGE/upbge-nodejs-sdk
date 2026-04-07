@@ -4,18 +4,18 @@
 
 """Node.js runtime wrapper for executing JavaScript code."""
 
-import sys
 import os
 import subprocess
+import sys
 
 try:
     import bpy
 except ImportError:
     bpy = None
 
-# Import centralized utilities
-from utils.paths import get_sdk_root, get_node_executable
 from utils.logging import debug as log_debug
+# Import centralized utilities
+from utils.paths import get_node_executable, get_sdk_root
 
 
 def get_sdk_path():

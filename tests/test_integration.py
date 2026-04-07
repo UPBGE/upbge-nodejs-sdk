@@ -7,10 +7,10 @@ Integration tests for UPBGE Node.js SDK.
 Tests interactions between modules and realistic scenarios.
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 
@@ -23,8 +23,8 @@ class TestPathsAndContextIntegration:
 
     def test_context_builder_with_sdk_path(self):
         """Context builder should work with SDK paths from utils.paths."""
-        from utils.paths import get_sdk_root
         from game_engine.context_builder import build_context
+        from utils.paths import get_sdk_root
 
         # Get SDK path
         sdk_path = get_sdk_root()
@@ -203,8 +203,8 @@ class TestRuntimeIntegration:
 
     def test_nodejs_runtime_with_context(self):
         """NodeJS runtime should accept context parameter."""
-        from runtime.nodejs import NodeJSRuntime
         from game_engine.context_builder import build_context
+        from runtime.nodejs import NodeJSRuntime
 
         runtime = NodeJSRuntime(use_worker=False)
 
@@ -251,7 +251,7 @@ class TestModuleImports:
     def test_all_utils_modules_importable(self):
         """All utils modules should be importable."""
         import utils
-        from utils import get_sdk_root, get_platform, debug, info
+        from utils import debug, get_platform, get_sdk_root, info
 
         assert callable(get_sdk_root)
         assert callable(get_platform)
@@ -260,7 +260,7 @@ class TestModuleImports:
 
     def test_game_engine_modules_importable(self):
         """Game engine modules should be importable."""
-        from game_engine import script_handler, context_builder
+        from game_engine import context_builder, script_handler
 
         assert hasattr(script_handler, "_extract_commands")
         assert hasattr(context_builder, "build_context")
@@ -314,6 +314,7 @@ class TestPerformance:
     def test_context_builder_performance(self):
         """Context builder should be reasonably fast."""
         import time
+
         from game_engine.context_builder import build_context
 
         start = time.perf_counter()
@@ -330,7 +331,8 @@ class TestPerformance:
     def test_path_resolution_performance(self):
         """Path resolution should be reasonably fast."""
         import time
-        from utils.paths import get_sdk_root, get_platform
+
+        from utils.paths import get_platform, get_sdk_root
 
         start = time.perf_counter()
         for _ in range(1000):
