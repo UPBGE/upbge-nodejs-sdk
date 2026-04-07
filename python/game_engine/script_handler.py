@@ -92,7 +92,6 @@ def _scene_get_object(scene, obj_name):
 
 def _get_raycast_results():
     """Return copy of rayCast results for context (read by wrapper)."""
-    global _raycast_results
     try:
         return dict(_raycast_results)
     except Exception:
