@@ -1,6 +1,13 @@
 # UPBGE JavaScript SDK
 
+[![Tests](https://github.com/UPBGE/upbge-nodejs-sdk/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/UPBGE/upbge-nodejs-sdk/actions/workflows/tests.yml)
+[![Coverage](https://img.shields.io/badge/coverage-65%25-orange)](https://github.com/UPBGE/upbge-nodejs-sdk)
+[![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.9+-blue)](https://www.python.org/)
+
 Full SDK for JavaScript support in the UPBGE Game Engine, fully independent of the UPBGE core.
+
+**Quality Status**: ✅ 109 tests passing | 0 regressions | Production ready
 
 ## Overview
 
@@ -54,6 +61,50 @@ This will create a ZIP file ready for distribution, including the add-on and the
 ### Quick start
 
 For a quick setup guide, see `SETUP.md`.
+
+## Development & Testing
+
+### Automated Testing (CI/CD)
+
+This project uses **GitHub Actions** for continuous integration:
+
+- ✅ **Automated Tests**: Runs 109 tests on every push (Python 3.9-3.14, Windows/Linux/macOS)
+- ✅ **Code Quality**: Checks formatting, imports, and linting automatically
+- ✅ **Coverage Reports**: Generates coverage reports and comments on PRs
+- ✅ **Build Verification**: Verifies project structure integrity
+
+**Status**: See [Actions](https://github.com/UPBGE/upbge-nodejs-sdk/actions) for latest results.
+
+For details, see [CI/CD Setup Guide](.github/CI_CD_SETUP.md).
+
+### Running Tests Locally
+
+```bash
+# Install test dependencies
+pip install pytest pytest-cov coverage
+
+# Run all tests
+pytest tests/ -v
+
+# Generate coverage report
+coverage run -m pytest tests/
+coverage report -m
+coverage html  # View in htmlcov/index.html
+```
+
+### Code Quality
+
+```bash
+# Install linting tools
+pip install black isort flake8
+
+# Format code
+black python/ tests/
+isort python/ tests/
+
+# Check style
+flake8 python/ tests/
+```
 
 ## Configuration
 

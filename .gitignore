@@ -21,6 +21,21 @@ env/
 venv/
 ENV/
 
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+dist-info/
+*.egg-info/
+build/
+dist/
+
+# Coverage reports
+coverage.xml
+coverage.json
+
 # IDE
 .vscode/
 .idea/
