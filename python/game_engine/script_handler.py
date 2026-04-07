@@ -95,6 +95,605 @@ def _get_raycast_results():
         return {}
 
 
+# Command handler functions
+def _handle_end_game(cmd, context, scene, obj, logic):
+    """Handle endGame command."""
+    try:
+        logic.endGame()
+    except Exception:
+        pass
+
+
+def _handle_restart_game(cmd, context, scene, obj, logic):
+    """Handle restartGame command."""
+    try:
+        logic.restartGame()
+    except Exception:
+        pass
+
+
+def _handle_set_gravity(cmd, context, scene, obj, logic):
+    """Handle setGravity command."""
+    vec = cmd.get("vec") or cmd.get("value") or [0, 0, -9.81]
+    if len(vec) >= 3:
+        try:
+            constraints = getattr(bge, "constraints", None)
+            if constraints is not None and hasattr(constraints, "setGravity"):
+                constraints.setGravity(float(vec[0]), float(vec[1]), float(vec[2]))
+        except Exception:
+            pass
+
+
+def _handle_activate(cmd, context, scene, obj, logic):
+    """Handle activate command for actuators."""
+    act_name = cmd.get("actuator")
+    if not act_name or not isinstance(act_name, str):
+        return
+
+    try:
+        ctrl_name = context.get("controller_name")
+        if not ctrl_name:
+            return
+
+        ctrls = getattr(obj, "controllers", None)
+        if ctrls is None:
+            return
+
+        ctrl = ctrls.get(ctrl_name) if hasattr(ctrls, "get") else None
+        if ctrl is None and hasattr(ctrls, "__getitem__"):
+            try:
+                ctrl = ctrls[ctrl_name]
+            except (KeyError, TypeError):
+                pass
+
+        if ctrl is None:
+            return
+
+        actuators = getattr(ctrl, "actuators", None)
+        if actuators is None:
+            return
+
+        act = actuators.get(act_name) if hasattr(actuators, "get") else None
+        if act is None and hasattr(actuators, "__getitem__"):
+            try:
+                act = actuators[act_name]
+            except (KeyError, TypeError):
+                pass
+
+        if act is not None:
+            ctrl.activate(act)
+    except Exception:
+        pass
+
+
+def _handle_deactivate(cmd, context, scene, obj, logic):
+    """Handle deactivate command for actuators."""
+    act_name = cmd.get("actuator")
+    if not act_name or not isinstance(act_name, str):
+        return
+
+    try:
+        ctrl_name = context.get("controller_name")
+        if not ctrl_name:
+            return
+
+        ctrls = getattr(obj, "controllers", None)
+        if ctrls is None:
+            return
+
+        ctrl = ctrls.get(ctrl_name) if hasattr(ctrls, "get") else None
+        if ctrl is None and hasattr(ctrls, "__getitem__"):
+            try:
+                ctrl = ctrls[ctrl_name]
+            except (KeyError, TypeError):
+                pass
+
+        if ctrl is None:
+            return
+
+        actuators = getattr(ctrl, "actuators", None)
+        if actuators is None:
+            return
+
+        act = actuators.get(act_name) if hasattr(actuators, "get") else None
+        if act is None and hasattr(actuators, "__getitem__"):
+            try:
+                act = actuators[act_name]
+            except (KeyError, TypeError):
+                pass
+
+        if act is not None:
+            ctrl.deactivate(act)
+    except Exception:
+        pass
+
+
+def _handle_raycast(cmd, context, scene, obj, logic):
+    """Handle rayCast command."""
+    to_vec = cmd.get("to")
+    if not to_vec or len(to_vec) < 3 or obj is None:
+        return
+
+    try:
+        from_vec = cmd.get("from")
+        dist = float(cmd.get("dist", 0))
+        prop = str(cmd.get("prop") or "")
+        face = bool(cmd.get("face", False))
+        xray = bool(cmd.get("xray", False))
+        mask = int(cmd.get("mask", 0xFFFF))
+        to_v = (float(to_vec[0]), float(to_vec[1]), float(to_vec[2]))
+        from_v = (float(from_vec[0]), float(from_vec[1]), float(from_vec[2])) if from_vec and len(from_vec) >= 3 else None
+        hit = obj.rayCast(to_v, from_v, dist, prop, 1 if face else 0, 1 if xray else 0, 0, mask)
+        if hit and len(hit) >= 3:
+            hit_obj, hit_point, hit_normal = hit[0], hit[1], hit[2]
+            _raycast_results[obj.name] = {
+                "object": hit_obj.name if hit_obj is not None else None,
+                "point": list(hit_point) if hit_point is not None else None,
+                "normal": list(hit_normal) if hit_normal is not None else None,
+            }
+        else:
+            _raycast_results[obj.name] = {"object": None, "point": None, "normal": None}
+    except Exception:
+        _raycast_results[obj.name] = {"object": None, "point": None, "normal": None}
+
+
+def _handle_raycast_to(cmd, context, scene, obj, logic):
+    """Handle rayCastTo command."""
+    target = cmd.get("target")
+    if obj is None:
+        return
+
+    try:
+        dist = float(cmd.get("dist", 0))
+        prop = str(cmd.get("prop") or "")
+        if isinstance(target, list) and len(target) >= 3:
+            to_point = (float(target[0]), float(target[1]), float(target[2]))
+            hit_obj = obj.rayCastTo(to_point, dist, prop)
+        elif isinstance(target, str):
+            tgt = _scene_get_object(scene, target)
+            hit_obj = obj.rayCastTo(tgt, dist, prop) if tgt is not None else None
+        else:
+            hit_obj = None
+        _raycast_results[obj.name] = {
+            "object": hit_obj.name if hit_obj is not None else None,
+            "point": None,
+            "normal": None,
+        }
+    except Exception:
+        _raycast_results[obj.name] = {"object": None, "point": None, "normal": None}
+
+
+def _handle_create_vehicle(cmd, context, scene, obj, logic):
+    """Handle createVehicle command."""
+    obj_name = obj.name if obj else None
+    if obj is None or scene is None or obj_name in _vehicle_constraints:
+        return
+
+    try:
+        constraints = getattr(bge, "constraints", None)
+        if constraints is not None and hasattr(constraints, "createVehicle"):
+            physics_id = getattr(obj, "getPhysicsId", lambda: 0)()
+            if physics_id:
+                vehicle = constraints.createVehicle(physics_id)
+                _vehicle_constraints[obj_name] = vehicle
+    except Exception:
+        pass
+
+
+def _handle_vehicle_apply_engine_force(cmd, context, scene, obj, logic):
+    """Handle vehicleApplyEngineForce command."""
+    chassis_name = cmd.get("object") or (obj.name if obj else None)
+    if not chassis_name:
+        return
+
+    try:
+        wheel_index = int(cmd.get("wheelIndex", 0))
+        force = float(cmd.get("force", 0))
+        vehicle = _vehicle_constraints.get(chassis_name)
+        if vehicle is not None and hasattr(vehicle, "applyEngineForce"):
+            vehicle.applyEngineForce(force, wheel_index)
+    except Exception:
+        pass
+
+
+def _handle_vehicle_set_steering_value(cmd, context, scene, obj, logic):
+    """Handle vehicleSetSteeringValue command."""
+    chassis_name = cmd.get("object") or (obj.name if obj else None)
+    if not chassis_name:
+        return
+
+    try:
+        wheel_index = int(cmd.get("wheelIndex", 0))
+        value = float(cmd.get("value", 0))
+        vehicle = _vehicle_constraints.get(chassis_name)
+        if vehicle is not None and hasattr(vehicle, "setSteeringValue"):
+            vehicle.setSteeringValue(value, wheel_index)
+    except Exception:
+        pass
+
+
+def _handle_vehicle_add_wheel(cmd, context, scene, obj, logic):
+    """Handle vehicleAddWheel command."""
+    chassis_name = cmd.get("object") or (obj.name if obj else None)
+    wheel_name = cmd.get("wheel")
+    if not chassis_name or not wheel_name or scene is None:
+        return
+
+    try:
+        wheel_obj = _scene_get_object(scene, wheel_name)
+        attach_pos = cmd.get("attachPos") or cmd.get("connectionPoint") or [0, 0, 0]
+        down_dir = cmd.get("downDir") or [0, 0, -1]
+        axle_dir = cmd.get("axleDir") or [0, 1, 0]
+        rest_len = float(cmd.get("suspensionRestLength", 0.5))
+        radius = float(cmd.get("wheelRadius", 0.4))
+        has_steering = bool(cmd.get("hasSteering", False))
+        vehicle = _vehicle_constraints.get(chassis_name)
+        if vehicle is not None and wheel_obj is not None and hasattr(vehicle, "addWheel"):
+            vehicle.addWheel(
+                wheel_obj,
+                (float(attach_pos[0]), float(attach_pos[1]), float(attach_pos[2])),
+                (float(down_dir[0]), float(down_dir[1]), float(down_dir[2])),
+                (float(axle_dir[0]), float(axle_dir[1]), float(axle_dir[2])),
+                rest_len,
+                radius,
+                has_steering,
+            )
+    except Exception:
+        pass
+
+
+def _handle_vehicle_apply_braking(cmd, context, scene, obj, logic):
+    """Handle vehicleApplyBraking command."""
+    chassis_name = cmd.get("object") or (obj.name if obj else None)
+    if not chassis_name:
+        return
+
+    try:
+        wheel_index = int(cmd.get("wheelIndex", 0))
+        force = float(cmd.get("force", 0))
+        vehicle = _vehicle_constraints.get(chassis_name)
+        if vehicle is not None and hasattr(vehicle, "applyBraking"):
+            vehicle.applyBraking(force, wheel_index)
+    except Exception:
+        pass
+
+
+def _handle_character_jump(cmd, context, scene, obj, logic):
+    """Handle characterJump command."""
+    if obj is None:
+        return
+
+    try:
+        constraints = getattr(bge, "constraints", None)
+        if constraints is not None and hasattr(constraints, "getCharacter"):
+            char = constraints.getCharacter(obj)
+            if char is not None and hasattr(char, "jump"):
+                char.jump()
+    except Exception:
+        pass
+
+
+def _handle_character_walk_direction(cmd, context, scene, obj, logic):
+    """Handle characterWalkDirection command."""
+    vec = cmd.get("vec") or cmd.get("value") or [0, 0, 0]
+    if obj is None or len(vec) < 3:
+        return
+
+    try:
+        constraints = getattr(bge, "constraints", None)
+        if constraints is not None and hasattr(constraints, "getCharacter"):
+            char = constraints.getCharacter(obj)
+            if char is not None and hasattr(char, "walkDirection"):
+                char.walkDirection = (float(vec[0]), float(vec[1]), float(vec[2]))
+    except Exception:
+        pass
+
+
+def _handle_character_set_velocity(cmd, context, scene, obj, logic):
+    """Handle characterSetVelocity command."""
+    vec = cmd.get("vec") or cmd.get("value") or [0, 0, 0]
+    if obj is None or len(vec) < 3:
+        return
+
+    try:
+        time_val = float(cmd.get("time", 0.2))
+        local = bool(cmd.get("local", False))
+        constraints = getattr(bge, "constraints", None)
+        if constraints is not None and hasattr(constraints, "getCharacter"):
+            char = constraints.getCharacter(obj)
+            if char is not None and hasattr(char, "setVelocity"):
+                char.setVelocity((float(vec[0]), float(vec[1]), float(vec[2])), time_val, local)
+    except Exception:
+        pass
+
+
+def _handle_apply_movement(cmd, context, scene, obj, logic):
+    """Handle applyMovement command."""
+    if obj is None:
+        return
+
+    vec = cmd.get("vec") or cmd.get("value") or [0.0, 0.0, 0.0]
+    _log("[UPBGE-JS] applyMovement obj=%s vec=%s" % (obj.name, vec))
+    try:
+        obj.applyMovement(vec, True)
+    except Exception:
+        try:
+            obj.worldPosition = [
+                obj.worldPosition[0] + vec[0],
+                obj.worldPosition[1] + vec[1],
+                obj.worldPosition[2] + vec[2],
+            ]
+        except Exception:
+            pass
+
+
+def _handle_set_position(cmd, context, scene, obj, logic):
+    """Handle setPosition command."""
+    if obj is None:
+        return
+
+    value = cmd.get("value")
+    if value is not None and len(value) >= 3:
+        try:
+            obj.worldPosition = value
+        except Exception:
+            pass
+
+
+def _handle_set_rotation(cmd, context, scene, obj, logic):
+    """Handle setRotation command."""
+    if obj is None:
+        return
+
+    value = cmd.get("value")
+    if value is not None and len(value) >= 3:
+        try:
+            from mathutils import Euler
+            obj.worldOrientation = Euler(value).to_matrix()
+        except Exception:
+            try:
+                obj.worldOrientation = value
+            except Exception:
+                pass
+
+
+def _handle_look_at(cmd, context, scene, obj, logic):
+    """Handle lookAt command."""
+    if obj is None:
+        return
+
+    target_name = cmd.get("target")
+    if not target_name or target_name == obj.name:
+        return
+
+    target_obj = _scene_get_object(scene, target_name)
+    if target_obj is None:
+        return
+
+    try:
+        import mathutils
+        cam_pos = obj.worldPosition
+        tgt_pos = target_obj.worldPosition
+        direction = mathutils.Vector(
+            (tgt_pos[0] - cam_pos[0], tgt_pos[1] - cam_pos[1], tgt_pos[2] - cam_pos[2])
+        )
+        if direction.length_squared > 1e-6:
+            direction.normalize()
+            align = getattr(obj, "alignAxisToVect", None)
+            if align is not None and callable(align):
+                align(-direction, 1, 1.0)
+            else:
+                up = mathutils.Vector((0, 0, 1))
+                right = direction.cross(up)
+                if right.length_squared > 1e-6:
+                    right.normalize()
+                    up = right.cross(direction)
+                    m = mathutils.Matrix((right, -direction, up)).transposed()
+                    obj.worldOrientation = m
+    except Exception:
+        pass
+
+
+def _handle_set_scale(cmd, context, scene, obj, logic):
+    """Handle setScale command."""
+    if obj is None:
+        return
+
+    value = cmd.get("value")
+    if value is not None and len(value) >= 3:
+        try:
+            obj.worldScale = value
+        except Exception:
+            try:
+                obj.localScale = value
+            except Exception:
+                pass
+
+
+def _handle_set_property(cmd, context, scene, obj, logic):
+    """Handle setProperty command."""
+    if obj is None:
+        return
+
+    prop_name = cmd.get("property")
+    if prop_name:
+        try:
+            obj[prop_name] = cmd.get("value")
+        except Exception:
+            pass
+
+
+def _handle_set_local_position(cmd, context, scene, obj, logic):
+    """Handle setLocalPosition command."""
+    if obj is None:
+        return
+
+    value = cmd.get("value")
+    if value is not None and len(value) >= 3:
+        try:
+            obj.localPosition = value
+        except Exception:
+            pass
+
+
+def _handle_set_local_rotation(cmd, context, scene, obj, logic):
+    """Handle setLocalRotation command."""
+    if obj is None:
+        return
+
+    value = cmd.get("value")
+    if value is not None and len(value) >= 3:
+        try:
+            from mathutils import Euler
+            obj.localOrientation = Euler(value).to_matrix()
+        except Exception:
+            try:
+                obj.localOrientation = value
+            except Exception:
+                pass
+
+
+def _handle_set_parent(cmd, context, scene, obj, logic):
+    """Handle setParent command."""
+    if obj is None:
+        return
+
+    parent_name = cmd.get("parent")
+    try:
+        if parent_name:
+            parent_obj = _scene_get_object(scene, parent_name)
+            if parent_obj is not None:
+                obj.setParent(parent_obj)
+        else:
+            obj.setParent(None)
+    except Exception:
+        pass
+
+
+def _handle_scene_add_object(cmd, context, scene, obj, logic):
+    """Handle sceneAddObject command."""
+    if scene is None:
+        return
+
+    add_obj_name = cmd.get("object")
+    if not add_obj_name:
+        return
+
+    try:
+        add_obj = _scene_get_object(scene, add_obj_name)
+        if add_obj is None:
+            for s in logic.getSceneList():
+                add_obj = _scene_get_object(s, add_obj_name)
+                if add_obj is not None:
+                    break
+        if add_obj is not None:
+            owner = context.get("object_name")
+            owner_obj = _scene_get_object(scene, owner) if owner else None
+            if hasattr(scene, "addObject") and owner_obj:
+                scene.addObject(add_obj, owner_obj, 0)
+    except Exception:
+        pass
+
+
+def _handle_scene_remove_object(cmd, context, scene, obj, logic):
+    """Handle sceneRemoveObject command."""
+    if scene is None:
+        return
+
+    obj_to_remove = cmd.get("object")
+    if not obj_to_remove:
+        return
+
+    try:
+        robj = _scene_get_object(scene, obj_to_remove)
+        if robj is not None:
+            if hasattr(scene.objects, "unlink"):
+                scene.objects.unlink(robj)
+            elif hasattr(scene, "unlink"):
+                scene.unlink(robj)
+    except Exception:
+        pass
+
+
+def _handle_set_viewport(cmd, context, scene, obj, logic):
+    """Handle setViewport command."""
+    if obj is None:
+        return
+
+    left = cmd.get("left")
+    bottom = cmd.get("bottom")
+    right = cmd.get("right")
+    top = cmd.get("top")
+    if left is None or bottom is None or right is None or top is None:
+        return
+
+    try:
+        if hasattr(obj, "setViewport"):
+            obj.setViewport(int(left), int(bottom), int(right), int(top))
+    except Exception:
+        pass
+
+
+def _handle_set_active_camera(cmd, context, scene, obj, logic):
+    """Handle setActiveCamera command."""
+    if obj is None or scene is None:
+        return
+
+    tgt_scene = scene
+    cmd_scene = cmd.get("scene")
+    if cmd_scene and isinstance(cmd_scene, str):
+        try:
+            scene_list = logic.getSceneList()
+            if hasattr(scene_list, "get"):
+                tgt_scene = scene_list.get(cmd_scene)
+            else:
+                for s in scene_list:
+                    if getattr(s, "name", None) == cmd_scene:
+                        tgt_scene = s
+                        break
+        except Exception:
+            pass
+
+    if tgt_scene is not None and hasattr(tgt_scene, "active_camera"):
+        try:
+            tgt_scene.active_camera = obj
+        except Exception:
+            pass
+
+
+# Command handler dispatch table
+_COMMAND_HANDLERS = {
+    "endGame": _handle_end_game,
+    "restartGame": _handle_restart_game,
+    "setGravity": _handle_set_gravity,
+    "activate": _handle_activate,
+    "deactivate": _handle_deactivate,
+    "rayCast": _handle_raycast,
+    "rayCastTo": _handle_raycast_to,
+    "createVehicle": _handle_create_vehicle,
+    "vehicleApplyEngineForce": _handle_vehicle_apply_engine_force,
+    "vehicleSetSteeringValue": _handle_vehicle_set_steering_value,
+    "vehicleAddWheel": _handle_vehicle_add_wheel,
+    "vehicleApplyBraking": _handle_vehicle_apply_braking,
+    "characterJump": _handle_character_jump,
+    "characterWalkDirection": _handle_character_walk_direction,
+    "characterSetVelocity": _handle_character_set_velocity,
+    "applyMovement": _handle_apply_movement,
+    "setPosition": _handle_set_position,
+    "setRotation": _handle_set_rotation,
+    "lookAt": _handle_look_at,
+    "setScale": _handle_set_scale,
+    "setProperty": _handle_set_property,
+    "setLocalPosition": _handle_set_local_position,
+    "setLocalRotation": _handle_set_local_rotation,
+    "setParent": _handle_set_parent,
+    "sceneAddObject": _handle_scene_add_object,
+    "sceneRemoveObject": _handle_scene_remove_object,
+    "setViewport": _handle_set_viewport,
+    "setActiveCamera": _handle_set_active_camera,
+}
+
+
 def _apply_commands(commands, context):
     """Apply a list of high-level commands to the BGE using Python API.
 
@@ -147,30 +746,14 @@ def _apply_commands(commands, context):
     for cmd in commands or []:
         try:
             op = cmd.get("op")
-            # Global ops (no object required)
-            if op == "endGame":
-                try:
-                    logic.endGame()
-                except Exception:
-                    pass
-                continue
-            if op == "restartGame":
-                try:
-                    logic.restartGame()
-                except Exception:
-                    pass
-                continue
-            if op == "setGravity":
-                vec = cmd.get("vec") or cmd.get("value") or [0, 0, -9.81]
-                if len(vec) >= 3:
-                    try:
-                        constraints = getattr(bge, "constraints", None)
-                        if constraints is not None and hasattr(constraints, "setGravity"):
-                            constraints.setGravity(float(vec[0]), float(vec[1]), float(vec[2]))
-                    except Exception:
-                        pass
+
+            # Global ops (endGame, restartGame, setGravity) - no object needed
+            if op in ("endGame", "restartGame", "setGravity"):
+                if op in _COMMAND_HANDLERS:
+                    _COMMAND_HANDLERS[op](cmd, context, scene, None, logic)
                 continue
 
+            # Object-specific ops
             obj_name = cmd.get("object") or context.get("object_name")
             if not obj_name:
                 continue
@@ -180,393 +763,10 @@ def _apply_commands(commands, context):
                 _log("[UPBGE-JS] _apply_commands: object not found obj_name=%s scene=%s" % (obj_name, scene_name or "(current)"))
                 continue
 
-            if op == "activate":
-                act_name = cmd.get("actuator")
-                if act_name and isinstance(act_name, str):
-                    try:
-                        owner = obj
-                        ctrl_name = context.get("controller_name")
-                        if ctrl_name:
-                            ctrls = getattr(owner, "controllers", None)
-                            if ctrls is not None:
-                                ctrl = ctrls.get(ctrl_name) if hasattr(ctrls, "get") else None
-                                if ctrl is None and hasattr(ctrls, "__getitem__"):
-                                    try:
-                                        ctrl = ctrls[ctrl_name]
-                                    except (KeyError, TypeError):
-                                        pass
-                                if ctrl is not None:
-                                    actuators = getattr(ctrl, "actuators", None)
-                                    if actuators is not None:
-                                        act = actuators.get(act_name) if hasattr(actuators, "get") else None
-                                        if act is None and hasattr(actuators, "__getitem__"):
-                                            try:
-                                                act = actuators[act_name]
-                                            except (KeyError, TypeError):
-                                                pass
-                                        if act is not None:
-                                            ctrl.activate(act)
-                    except Exception:
-                        pass
-                continue
-            if op == "deactivate":
-                act_name = cmd.get("actuator")
-                if act_name and isinstance(act_name, str):
-                    try:
-                        owner = obj
-                        ctrl_name = context.get("controller_name")
-                        if ctrl_name:
-                            ctrls = getattr(owner, "controllers", None)
-                            if ctrls is not None:
-                                ctrl = ctrls.get(ctrl_name) if hasattr(ctrls, "get") else None
-                                if ctrl is None and hasattr(ctrls, "__getitem__"):
-                                    try:
-                                        ctrl = ctrls[ctrl_name]
-                                    except (KeyError, TypeError):
-                                        pass
-                                if ctrl is not None:
-                                    actuators = getattr(ctrl, "actuators", None)
-                                    if actuators is not None:
-                                        act = actuators.get(act_name) if hasattr(actuators, "get") else None
-                                        if act is None and hasattr(actuators, "__getitem__"):
-                                            try:
-                                                act = actuators[act_name]
-                                            except (KeyError, TypeError):
-                                                pass
-                                        if act is not None:
-                                            ctrl.deactivate(act)
-                    except Exception:
-                        pass
-                continue
-            if op == "rayCast":
-                to_vec = cmd.get("to")
-                if to_vec and len(to_vec) >= 3 and obj is not None:
-                    try:
-                        from_vec = cmd.get("from")
-                        dist = float(cmd.get("dist", 0))
-                        prop = str(cmd.get("prop") or "")
-                        face = bool(cmd.get("face", False))
-                        xray = bool(cmd.get("xray", False))
-                        mask = int(cmd.get("mask", 0xFFFF))
-                        to_v = (float(to_vec[0]), float(to_vec[1]), float(to_vec[2]))
-                        from_v = (float(from_vec[0]), float(from_vec[1]), float(from_vec[2])) if from_vec and len(from_vec) >= 3 else None
-                        hit = obj.rayCast(to_v, from_v, dist, prop, 1 if face else 0, 1 if xray else 0, 0, mask)
-                        if hit and len(hit) >= 3:
-                            hit_obj, hit_point, hit_normal = hit[0], hit[1], hit[2]
-                            key = obj_name
-                            _raycast_results[key] = {
-                                "object": hit_obj.name if hit_obj is not None else None,
-                                "point": list(hit_point) if hit_point is not None else None,
-                                "normal": list(hit_normal) if hit_normal is not None else None,
-                            }
-                        else:
-                            _raycast_results[obj_name] = {"object": None, "point": None, "normal": None}
-                    except Exception:
-                        _raycast_results[obj_name] = {"object": None, "point": None, "normal": None}
-                continue
-            if op == "rayCastTo":
-                target = cmd.get("target")
-                if obj is not None:
-                    try:
-                        dist = float(cmd.get("dist", 0))
-                        prop = str(cmd.get("prop") or "")
-                        if isinstance(target, list) and len(target) >= 3:
-                            to_point = (float(target[0]), float(target[1]), float(target[2]))
-                            hit_obj = obj.rayCastTo(to_point, dist, prop)
-                        elif isinstance(target, str):
-                            tgt = _scene_get_object(scene, target)
-                            hit_obj = obj.rayCastTo(tgt, dist, prop) if tgt is not None else None
-                        else:
-                            hit_obj = None
-                        _raycast_results[obj_name] = {
-                            "object": hit_obj.name if hit_obj is not None else None,
-                            "point": None,
-                            "normal": None,
-                        }
-                    except Exception:
-                        _raycast_results[obj_name] = {"object": None, "point": None, "normal": None}
-                continue
-            # Constraints (bge.constraints) – object-scoped
-            if op == "createVehicle":
-                if obj is not None and scene is not None and obj_name not in _vehicle_constraints:
-                    try:
-                        constraints = getattr(bge, "constraints", None)
-                        if constraints is not None and hasattr(constraints, "createVehicle"):
-                            physics_id = getattr(obj, "getPhysicsId", lambda: 0)()
-                            if physics_id:
-                                vehicle = constraints.createVehicle(physics_id)
-                                _vehicle_constraints[obj_name] = vehicle
-                    except Exception:
-                        pass
-                continue
-            if op == "vehicleApplyEngineForce":
-                chassis_name = cmd.get("object") or obj_name
-                wheel_index = int(cmd.get("wheelIndex", 0))
-                force = float(cmd.get("force", 0))
-                try:
-                    vehicle = _vehicle_constraints.get(chassis_name)
-                    if vehicle is not None and hasattr(vehicle, "applyEngineForce"):
-                        vehicle.applyEngineForce(force, wheel_index)
-                except Exception:
-                    pass
-                continue
-            if op == "vehicleSetSteeringValue":
-                chassis_name = cmd.get("object") or obj_name
-                wheel_index = int(cmd.get("wheelIndex", 0))
-                value = float(cmd.get("value", 0))
-                try:
-                    vehicle = _vehicle_constraints.get(chassis_name)
-                    if vehicle is not None and hasattr(vehicle, "setSteeringValue"):
-                        vehicle.setSteeringValue(value, wheel_index)
-                except Exception:
-                    pass
-                continue
-            if op == "vehicleAddWheel":
-                chassis_name = cmd.get("object") or obj_name
-                wheel_name = cmd.get("wheel")
-                if chassis_name and wheel_name and scene is not None:
-                    try:
-                        wheel_obj = _scene_get_object(scene, wheel_name)
-                        attach_pos = cmd.get("attachPos") or cmd.get("connectionPoint") or [0, 0, 0]
-                        down_dir = cmd.get("downDir") or [0, 0, -1]
-                        axle_dir = cmd.get("axleDir") or [0, 1, 0]
-                        rest_len = float(cmd.get("suspensionRestLength", 0.5))
-                        radius = float(cmd.get("wheelRadius", 0.4))
-                        has_steering = bool(cmd.get("hasSteering", False))
-                        vehicle = _vehicle_constraints.get(chassis_name)
-                        if vehicle is not None and wheel_obj is not None and hasattr(vehicle, "addWheel"):
-                            vehicle.addWheel(
-                                wheel_obj,
-                                (float(attach_pos[0]), float(attach_pos[1]), float(attach_pos[2])),
-                                (float(down_dir[0]), float(down_dir[1]), float(down_dir[2])),
-                                (float(axle_dir[0]), float(axle_dir[1]), float(axle_dir[2])),
-                                rest_len,
-                                radius,
-                                has_steering,
-                            )
-                    except Exception:
-                        pass
-                continue
-            if op == "vehicleApplyBraking":
-                chassis_name = cmd.get("object") or obj_name
-                wheel_index = int(cmd.get("wheelIndex", 0))
-                force = float(cmd.get("force", 0))
-                try:
-                    vehicle = _vehicle_constraints.get(chassis_name)
-                    if vehicle is not None and hasattr(vehicle, "applyBraking"):
-                        vehicle.applyBraking(force, wheel_index)
-                except Exception:
-                    pass
-                continue
-            if op == "characterJump":
-                if obj is not None:
-                    try:
-                        constraints = getattr(bge, "constraints", None)
-                        if constraints is not None and hasattr(constraints, "getCharacter"):
-                            char = constraints.getCharacter(obj)
-                            if char is not None and hasattr(char, "jump"):
-                                char.jump()
-                    except Exception:
-                        pass
-                continue
-            if op == "characterWalkDirection":
-                vec = cmd.get("vec") or cmd.get("value") or [0, 0, 0]
-                if obj is not None and len(vec) >= 3:
-                    try:
-                        constraints = getattr(bge, "constraints", None)
-                        if constraints is not None and hasattr(constraints, "getCharacter"):
-                            char = constraints.getCharacter(obj)
-                            if char is not None and hasattr(char, "walkDirection"):
-                                char.walkDirection = (float(vec[0]), float(vec[1]), float(vec[2]))
-                    except Exception:
-                        pass
-                continue
-            if op == "characterSetVelocity":
-                vec = cmd.get("vec") or cmd.get("value") or [0, 0, 0]
-                time_val = float(cmd.get("time", 0.2))
-                local = bool(cmd.get("local", False))
-                if obj is not None and len(vec) >= 3:
-                    try:
-                        constraints = getattr(bge, "constraints", None)
-                        if constraints is not None and hasattr(constraints, "getCharacter"):
-                            char = constraints.getCharacter(obj)
-                            if char is not None and hasattr(char, "setVelocity"):
-                                char.setVelocity((float(vec[0]), float(vec[1]), float(vec[2])), time_val, local)
-                    except Exception:
-                        pass
-                continue
-            if op == "applyMovement":
-                vec = cmd.get("vec") or cmd.get("value") or [0.0, 0.0, 0.0]
-                _log("[UPBGE-JS] applyMovement obj=%s vec=%s" % (obj_name, vec))
-                try:
-                    obj.applyMovement(vec, True)
-                except Exception:
-                    try:
-                        obj.worldPosition = [
-                            obj.worldPosition[0] + vec[0],
-                            obj.worldPosition[1] + vec[1],
-                            obj.worldPosition[2] + vec[2],
-                        ]
-                    except Exception:
-                        pass
-            elif op == "setPosition":
-                value = cmd.get("value")
-                if value is not None and len(value) >= 3:
-                    try:
-                        obj.worldPosition = value
-                    except Exception:
-                        pass
-            elif op == "setRotation":
-                value = cmd.get("value")
-                if value is not None and len(value) >= 3:
-                    try:
-                        from mathutils import Euler
-                        obj.worldOrientation = Euler(value).to_matrix()
-                    except Exception:
-                        try:
-                            obj.worldOrientation = value
-                        except Exception:
-                            pass
-            elif op == "lookAt":
-                target_name = cmd.get("target")
-                if target_name and target_name != obj_name:
-                    target_obj = _scene_get_object(scene, target_name)
-                    if target_obj is not None:
-                        try:
-                            import mathutils
-                            cam_pos = obj.worldPosition
-                            tgt_pos = target_obj.worldPosition
-                            direction = mathutils.Vector(
-                                (tgt_pos[0] - cam_pos[0], tgt_pos[1] - cam_pos[1], tgt_pos[2] - cam_pos[2])
-                            )
-                            if direction.length_squared > 1e-6:
-                                direction.normalize()
-                                align = getattr(obj, "alignAxisToVect", None)
-                                if align is not None and callable(align):
-                                    align(-direction, 1, 1.0)
-                                else:
-                                    up = mathutils.Vector((0, 0, 1))
-                                    right = direction.cross(up)
-                                    if right.length_squared > 1e-6:
-                                        right.normalize()
-                                        up = right.cross(direction)
-                                        m = mathutils.Matrix((right, -direction, up)).transposed()
-                                        obj.worldOrientation = m
-                        except Exception:
-                            pass
-            elif op == "setScale":
-                value = cmd.get("value")
-                if value is not None and len(value) >= 3:
-                    try:
-                        obj.worldScale = value
-                    except Exception:
-                        try:
-                            obj.localScale = value
-                        except Exception:
-                            pass
-            elif op == "setProperty":
-                prop_name = cmd.get("property")
-                if prop_name:
-                    try:
-                        obj[prop_name] = cmd.get("value")
-                    except Exception:
-                        pass
-            elif op == "setLocalPosition":
-                value = cmd.get("value")
-                if value is not None and len(value) >= 3:
-                    try:
-                        obj.localPosition = value
-                    except Exception:
-                        pass
-            elif op == "setLocalRotation":
-                value = cmd.get("value")
-                if value is not None and len(value) >= 3:
-                    try:
-                        from mathutils import Euler
-                        obj.localOrientation = Euler(value).to_matrix()
-                    except Exception:
-                        try:
-                            obj.localOrientation = value
-                        except Exception:
-                            pass
-            elif op == "setParent":
-                parent_name = cmd.get("parent")
-                try:
-                    if parent_name:
-                        parent_obj = _scene_get_object(scene, parent_name)
-                        if parent_obj is not None:
-                            obj.setParent(parent_obj)
-                    else:
-                        obj.setParent(None)
-                except Exception:
-                    pass
-            elif op == "sceneAddObject":
-                # BGE: scene.addObject(obj, owner, time) - obj can be from any scene
-                add_obj_name = cmd.get("object")
-                if add_obj_name and scene:
-                    try:
-                        add_obj = _scene_get_object(scene, add_obj_name)
-                        if add_obj is None:
-                            for s in logic.getSceneList():
-                                add_obj = _scene_get_object(s, add_obj_name)
-                                if add_obj is not None:
-                                    break
-                        if add_obj is not None:
-                            owner = context.get("object_name")
-                            owner_obj = _scene_get_object(scene, owner) if owner else None
-                            if hasattr(scene, "addObject") and owner_obj:
-                                scene.addObject(add_obj, owner_obj, 0)
-                    except Exception:
-                        pass
-                continue
-            elif op == "sceneRemoveObject":
-                obj_to_remove = cmd.get("object")
-                if obj_to_remove and scene:
-                    try:
-                        robj = _scene_get_object(scene, obj_to_remove)
-                        if robj is not None:
-                            if hasattr(scene.objects, "unlink"):
-                                scene.objects.unlink(robj)
-                            elif hasattr(scene, "unlink"):
-                                scene.unlink(robj)
-                    except Exception:
-                        pass
-                continue
-            # Viewport: object = camera name
-            if op == "setViewport":
-                left = cmd.get("left")
-                bottom = cmd.get("bottom")
-                right = cmd.get("right")
-                top = cmd.get("top")
-                if obj is not None and left is not None and bottom is not None and right is not None and top is not None:
-                    try:
-                        if hasattr(obj, "setViewport"):
-                            obj.setViewport(int(left), int(bottom), int(right), int(top))
-                    except Exception:
-                        pass
-                continue
-            # Active camera: object = camera name; optional scene = target scene name
-            if op == "setActiveCamera":
-                tgt_scene = scene
-                cmd_scene = cmd.get("scene")
-                if cmd_scene and isinstance(cmd_scene, str):
-                    try:
-                        scene_list = logic.getSceneList()
-                        if hasattr(scene_list, "get"):
-                            tgt_scene = scene_list.get(cmd_scene)
-                        else:
-                            for s in scene_list:
-                                if getattr(s, "name", None) == cmd_scene:
-                                    tgt_scene = s
-                                    break
-                    except Exception:
-                        pass
-                if obj is not None and tgt_scene is not None and hasattr(tgt_scene, "active_camera"):
-                    try:
-                        tgt_scene.active_camera = obj
-                    except Exception:
-                        pass
-                continue
+            # Dispatch to handler
+            if op in _COMMAND_HANDLERS:
+                _COMMAND_HANDLERS[op](cmd, context, scene, obj, logic)
+
         except Exception:
             continue
 

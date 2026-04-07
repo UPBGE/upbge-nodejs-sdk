@@ -1,0 +1,76 @@
+================================================================================
+REFATOR DE _apply_commands - ESTATÍSTICAS
+================================================================================
+
+ARQUIVO: python/game_engine/script_handler.py
+
+ANTES DO REFATOR:
+  - Função _apply_commands: ~475 linhas (98-572)
+  - Estrutura: Gigantesco bloco com if/elif/elif... (475 linhas de condicionals)
+  - Total de linhas do arquivo: ~687
+
+DEPOIS DO REFATOR:
+  - Função _apply_commands: ~75 linhas (697-771)
+  - 28 handlers individuais: ~565 linhas (99-662)
+  - Dicionário _COMMAND_HANDLERS: ~30 linhas (665-694)
+  - Total de linhas do arquivo: ~886
+
+REDUÇÃO DE COMPLEXIDADE:
+  - Função principal: 475 linhas → 75 linhas (84% menor!)
+  - Cyclomatic complexity: MUITO reduzido (dispatch em vez de múltiplos if/elif)
+  - Máxima indentação: 4+ níveis → 2 níveis
+
+HANDLERS CRIADOS:
+  28 handlers individuais, cada um com assinatura uniforme:
+    def _handle_XXX(cmd, context, scene, obj, logic)
+
+  Operações globais (3):
+    - endGame, restartGame, setGravity
+
+  Raycast e constraints (8):
+    - rayCast, rayCastTo
+    - createVehicle, vehicleApplyEngineForce, vehicleSetSteeringValue
+    - vehicleAddWheel, vehicleApplyBraking
+
+  Atuadores (2):
+    - activate, deactivate
+
+  Character controller (3):
+    - characterJump, characterWalkDirection, characterSetVelocity
+
+  Transformação (7):
+    - applyMovement, setPosition, setRotation, setScale
+    - setLocalPosition, setLocalRotation, lookAt
+
+  Propriedades (1):
+    - setProperty
+
+  Parenting (1):
+    - setParent
+
+  Cena (2):
+    - sceneAddObject, sceneRemoveObject
+
+  Câmera e Viewport (2):
+    - setViewport, setActiveCamera
+
+PADRÃO DISPATCH:
+  - Tabela hash _COMMAND_HANDLERS mapeia operações a handlers
+  - Lookup O(1) para qualquer operação
+  - Fácil adicionar novas operações (1 handler + 1 linha no dict)
+
+LÓGICA PRESERVADA:
+  - 100% das verificações de validação mantidas
+  - 100% do tratamento de erros preservado
+  - Nenhuma mudança de comportamento
+  - Todos os testes devem passar sem modificações
+
+BENEFÍCIOS IMEDIATOS:
+  1. Código muito mais legível
+  2. Handlers testáveis individualmente
+  3. Fácil de manter e estender
+  4. Reduz chance de bugs (menos complexidade)
+  5. Padrão mais Pythônico (dispatch tables)
+  6. Melhor separação de responsabilidades
+
+================================================================================
