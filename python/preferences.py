@@ -35,7 +35,7 @@ class SDKAddonPreferences(AddonPreferences):
                 module = sys.modules[addon_dir_name]
                 if hasattr(module, 'restart_sdk'):
                     module.restart_sdk(context)
-        except:
+        except Exception:
             pass
 
     skip_update: BoolProperty(name="", default=False)

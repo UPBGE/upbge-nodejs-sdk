@@ -66,13 +66,13 @@ def detect_sdk_path():
         addon_prefs = preferences.addons["upbge_nodejs_sdk"].preferences
         if addon_prefs.sdk_path != "":
             return
-    except:
+    except Exception:
         # Context might not be available, try to get preferences differently
         try:
             addon_prefs = bpy.context.preferences.addons.get("upbge_nodejs_sdk")
             if addon_prefs and addon_prefs.preferences.sdk_path != "":
                 return
-        except:
+        except Exception:
             pass
 
     # When installed via ZIP, the add-on directory IS the SDK directory

@@ -99,7 +99,7 @@ def execute(context, is_interactive):
 
     try:
         line_object = sc.history[-1]
-    except:
+    except IndexError:
         return {'CANCELLED'}
 
     console_state = get_console(hash(context.region))
@@ -245,7 +245,7 @@ def banner(context):
             result = subprocess.run([node_path, "--version"], capture_output=True, text=True, timeout=2)
             if result.returncode == 0:
                 node_version = result.stdout.strip()
-        except:
+        except Exception:
             pass
     
     message = (
