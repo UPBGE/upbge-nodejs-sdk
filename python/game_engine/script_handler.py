@@ -50,7 +50,11 @@ def get_runtime():
         use_worker = False
         try:
             prefs = bpy.context.preferences.addons.get("upbge_nodejs_sdk")
-            if prefs and hasattr(prefs, "preferences") and getattr(prefs.preferences, "use_persistent_worker", False):
+            if (
+                prefs
+                and hasattr(prefs, "preferences")
+                and getattr(prefs.preferences, "use_persistent_worker", False)
+            ):
                 use_worker = True
         except Exception:
             pass
@@ -62,7 +66,7 @@ def is_javascript_file(filename):
     """Check if a filename is a JavaScript file."""
     if not filename:
         return False
-    return filename.endswith('.js') or filename.endswith('.mjs')
+    return filename.endswith(".js") or filename.endswith(".mjs")
 
 
 def _scene_get_object(scene, obj_name):
@@ -222,8 +226,14 @@ def _handle_raycast(cmd, context, scene, obj, logic):
         xray = bool(cmd.get("xray", False))
         mask = int(cmd.get("mask", 0xFFFF))
         to_v = (float(to_vec[0]), float(to_vec[1]), float(to_vec[2]))
-        from_v = (float(from_vec[0]), float(from_vec[1]), float(from_vec[2])) if from_vec and len(from_vec) >= 3 else None
-        hit = obj.rayCast(to_v, from_v, dist, prop, 1 if face else 0, 1 if xray else 0, 0, mask)
+        from_v = (
+            (float(from_vec[0]), float(from_vec[1]), float(from_vec[2]))
+            if from_vec and len(from_vec) >= 3
+            else None
+        )
+        hit = obj.rayCast(
+            to_v, from_v, dist, prop, 1 if face else 0, 1 if xray else 0, 0, mask
+        )
         if hit and len(hit) >= 3:
             hit_obj, hit_point, hit_normal = hit[0], hit[1], hit[2]
             _raycast_results[obj.name] = {
@@ -328,7 +338,11 @@ def _handle_vehicle_add_wheel(cmd, context, scene, obj, logic):
         radius = float(cmd.get("wheelRadius", 0.4))
         has_steering = bool(cmd.get("hasSteering", False))
         vehicle = _vehicle_constraints.get(chassis_name)
-        if vehicle is not None and wheel_obj is not None and hasattr(vehicle, "addWheel"):
+        if (
+            vehicle is not None
+            and wheel_obj is not None
+            and hasattr(vehicle, "addWheel")
+        ):
             vehicle.addWheel(
                 wheel_obj,
                 (float(attach_pos[0]), float(attach_pos[1]), float(attach_pos[2])),
@@ -402,7 +416,9 @@ def _handle_character_set_velocity(cmd, context, scene, obj, logic):
         if constraints is not None and hasattr(constraints, "getCharacter"):
             char = constraints.getCharacter(obj)
             if char is not None and hasattr(char, "setVelocity"):
-                char.setVelocity((float(vec[0]), float(vec[1]), float(vec[2])), time_val, local)
+                char.setVelocity(
+                    (float(vec[0]), float(vec[1]), float(vec[2])), time_val, local
+                )
     except Exception:
         pass
 
@@ -449,6 +465,7 @@ def _handle_set_rotation(cmd, context, scene, obj, logic):
     if value is not None and len(value) >= 3:
         try:
             from mathutils import Euler
+
             obj.worldOrientation = Euler(value).to_matrix()
         except Exception:
             try:
@@ -472,6 +489,7 @@ def _handle_look_at(cmd, context, scene, obj, logic):
 
     try:
         import mathutils
+
         cam_pos = obj.worldPosition
         tgt_pos = target_obj.worldPosition
         direction = mathutils.Vector(
@@ -545,6 +563,7 @@ def _handle_set_local_rotation(cmd, context, scene, obj, logic):
     if value is not None and len(value) >= 3:
         try:
             from mathutils import Euler
+
             obj.localOrientation = Euler(value).to_matrix()
         except Exception:
             try:
@@ -740,8 +759,10 @@ def _apply_commands(commands, context):
         _log("[UPBGE-JS] _apply_commands: no scene, skip")
         return
 
-    _log("[UPBGE-JS] _apply_commands scene=%s object_name=%s num_commands=%s" % (
-        scene_name or "(current)", context.get("object_name"), len(commands or [])))
+    _log(
+        "[UPBGE-JS] _apply_commands scene=%s object_name=%s num_commands=%s"
+        % (scene_name or "(current)", context.get("object_name"), len(commands or []))
+    )
 
     for cmd in commands or []:
         try:
@@ -760,7 +781,10 @@ def _apply_commands(commands, context):
 
             obj = _scene_get_object(scene, obj_name)
             if obj is None:
-                _log("[UPBGE-JS] _apply_commands: object not found obj_name=%s scene=%s" % (obj_name, scene_name or "(current)"))
+                _log(
+                    "[UPBGE-JS] _apply_commands: object not found obj_name=%s scene=%s"
+                    % (obj_name, scene_name or "(current)")
+                )
                 continue
 
             # Dispatch to handler
@@ -845,7 +869,10 @@ def execute_controller_script(script_text, filename, context=None):
         output, error_output, success = runtime.execute_with_context(
             script_text, context=context, timeout=10
         )
-        _log("[UPBGE-JS] Node run success=%s output_len=%s stderr_len=%s" % (success, len(output or ""), len(error_output or "")))
+        _log(
+            "[UPBGE-JS] Node run success=%s output_len=%s stderr_len=%s"
+            % (success, len(output or ""), len(error_output or ""))
+        )
 
         # Extraímos e aplicamos comandos, mesmo que o script tenha retornado erro,
         # mas só se o processo Node foi bem-sucedido.
@@ -853,14 +880,20 @@ def execute_controller_script(script_text, filename, context=None):
             commands = _extract_commands(output)
             _log("[UPBGE-JS] Extracted %s commands" % (len(commands),))
             if commands:
-                _log("[UPBGE-JS] Commands: %s" % (commands[:3] if len(commands) > 3 else commands,))
+                _log(
+                    "[UPBGE-JS] Commands: %s"
+                    % (commands[:3] if len(commands) > 3 else commands,)
+                )
             elif output and "___BGE_CMDS___" in output:
                 # Node sent marker but 0 commands: show JS debug lines from stdout
                 for line in (output or "").splitlines():
                     if "[UPBGE-JS] DEBUG" in line:
                         _log(line.strip())
                     if "___BGE_CMDS___" in line:
-                        _log("[UPBGE-JS] Node sent (no commands): %s" % (line.strip()[:80],))
+                        _log(
+                            "[UPBGE-JS] Node sent (no commands): %s"
+                            % (line.strip()[:80],)
+                        )
                         break
             _apply_commands(commands, context)
 

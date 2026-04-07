@@ -323,7 +323,9 @@ class TestPerformance:
 
         # Should complete 100 iterations in < 1 second
         # (This is a sanity check, not a strict performance requirement)
-        assert elapsed < 1.0, f"Context building too slow: {elapsed}s for 100 iterations"
+        assert (
+            elapsed < 1.0
+        ), f"Context building too slow: {elapsed}s for 100 iterations"
 
     def test_path_resolution_performance(self):
         """Path resolution should be reasonably fast."""

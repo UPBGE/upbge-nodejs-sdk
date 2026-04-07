@@ -12,7 +12,7 @@ def register_javascript_controller():
     # This function will interface with the game engine's controller system
     # The actual controller implementation (SCA_JavaScriptController) is in C++
     # This Python module provides the interface for managing JavaScript controllers
-    
+
     # For now, this is a placeholder
     # In the future, this could:
     # - Register custom controller properties

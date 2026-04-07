@@ -9,7 +9,7 @@ import sys
 from unittest.mock import patch, MagicMock
 
 # Add python directory to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'python'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "python"))
 
 from utils.paths import (
     get_platform,
@@ -33,6 +33,7 @@ class TestGetPlatform:
     def test_get_platform_matches_system(self):
         """Platform should match actual system."""
         import platform as stdlib_platform
+
         expected = stdlib_platform.system()
         assert get_platform() == expected
 
@@ -67,6 +68,7 @@ class TestGetSdkRoot:
             # Return True for python and runtime directories
             def isdir_side_effect(path):
                 return "python" in path or "runtime" in path
+
             mock_isdir.side_effect = isdir_side_effect
 
             with patch("os.path.abspath") as mock_abspath:

@@ -42,7 +42,7 @@ def get_node_path():
 
 class NodeJSRuntime:
     """Wrapper for executing JavaScript code using Node.js."""
-    
+
     def __init__(self, use_worker=False):
         self.node_path = get_node_path()
         self._interactive_context = {}  # Store for interactive console context
@@ -68,13 +68,13 @@ class NodeJSRuntime:
   });
 })();
 """
-    
+
     def get_node_path(self):
         """Get the path to Node.js executable."""
         if not self.node_path:
             self.node_path = get_node_path()
         return self.node_path
-    
+
     def execute_interactive(self, code, context_id="default", timeout=5):
         """
         Execute JavaScript code in an interactive context (for console).
@@ -83,27 +83,36 @@ class NodeJSRuntime:
         """
         node_path = self.get_node_path()
         if not node_path:
-            return ("", "Error: Node.js not found. Please install Node.js or configure SDK path.", False)
-        
+            return (
+                "",
+                "Error: Node.js not found. Please install Node.js or configure SDK path.",
+                False,
+            )
+
         try:
             # Get or create context for this console
             if context_id not in self._interactive_context:
-                self._interactive_context[context_id] = {
-                    "accumulated_code": ""
-                }
-            
+                self._interactive_context[context_id] = {"accumulated_code": ""}
+
             context = self._interactive_context[context_id]
-            
+
             # Accumulate code - this maintains variable state
             if context["accumulated_code"]:
                 context["accumulated_code"] += "\n" + code
             else:
                 context["accumulated_code"] = code
-            
+
             # Escape the accumulated code for use in JavaScript string
             accumulated = context["accumulated_code"]
-            escaped_code = accumulated.replace('\\', '\\\\').replace("'", "\\'").replace('\n', '\\n').replace('\r', '\\r').replace('`', '\\`').replace('$', '\\$')
-            
+            escaped_code = (
+                accumulated.replace("\\", "\\\\")
+                .replace("'", "\\'")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("`", "\\`")
+                .replace("$", "\\$")
+            )
+
             # Execute all accumulated code together to maintain context
             wrapped_code = f"""
 try {{
@@ -125,32 +134,36 @@ try {{
     process.exit(1);
 }}
 """
-            
+
             result = subprocess.run(
                 [node_path, "-e", wrapped_code],
                 capture_output=True,
                 text=True,
                 timeout=timeout,
             )
-            
+
             output = result.stdout
             error_output = result.stderr
-            
+
             if result.returncode != 0:
                 if not error_output:
                     error_output = output
                 # Don't clear accumulated code on error - user might want to fix it
                 return (output, error_output, False)
-            
+
             return (output, error_output, True)
-            
+
         except FileNotFoundError:
-            return ("", "Error: Node.js not found. Please install Node.js or configure SDK path.", False)
+            return (
+                "",
+                "Error: Node.js not found. Please install Node.js or configure SDK path.",
+                False,
+            )
         except subprocess.TimeoutExpired:
             return ("", "Error: JavaScript execution timed out.", False)
         except Exception as e:
             return ("", f"Error executing JavaScript: {str(e)}", False)
-    
+
     def execute(self, code, timeout=5):
         """
         Execute JavaScript code using Node.js.
@@ -158,12 +171,21 @@ try {{
         """
         node_path = self.get_node_path()
         if not node_path:
-            return ("", "Error: Node.js not found. Please install Node.js or configure SDK path.", False)
-        
+            return (
+                "",
+                "Error: Node.js not found. Please install Node.js or configure SDK path.",
+                False,
+            )
+
         try:
             # Escape the code for use in JavaScript string
-            escaped_code = code.replace('\\', '\\\\').replace("'", "\\'").replace('\n', '\\n').replace('\r', '\\r')
-            
+            escaped_code = (
+                code.replace("\\", "\\\\")
+                .replace("'", "\\'")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+            )
+
             wrapped_code = f"""// Try to evaluate as expression first, then as statement
 try {{
     // Try to evaluate as expression
@@ -189,26 +211,30 @@ try {{
     process.exit(1);
     }}
 }}"""
-            
+
             result = subprocess.run(
                 [node_path, "-e", wrapped_code],
                 capture_output=True,
                 text=True,
                 timeout=timeout,
             )
-            
+
             output = result.stdout
             error_output = result.stderr
-            
+
             if result.returncode != 0:
                 if not error_output:
                     error_output = output
                 return (output, error_output, False)
-            
+
             return (output, error_output, True)
-            
+
         except FileNotFoundError:
-            return ("", "Error: Node.js not found. Please install Node.js or configure SDK path.", False)
+            return (
+                "",
+                "Error: Node.js not found. Please install Node.js or configure SDK path.",
+                False,
+            )
         except subprocess.TimeoutExpired:
             return ("", "Error: JavaScript execution timed out.", False)
         except Exception as e:
@@ -247,6 +273,7 @@ try {{
         req_id = str(self._worker_exec_id)
         try:
             import json as _json
+
             msg = {"id": req_id, "code": wrapped_code}
             line = _json.dumps(msg) + "\n"
             self._worker_stdin.write(line)
@@ -286,9 +313,16 @@ try {{
         import json
 
         node_path = self.get_node_path()
-        log_debug("Node execute_with_context code_len=%s node_path=%s" % (len(code or ""), node_path or "NOT FOUND"))
+        log_debug(
+            "Node execute_with_context code_len=%s node_path=%s"
+            % (len(code or ""), node_path or "NOT FOUND")
+        )
         if not node_path:
-            return ("", "Error: Node.js not found. Please install Node.js or configure SDK path.", False)
+            return (
+                "",
+                "Error: Node.js not found. Please install Node.js or configure SDK path.",
+                False,
+            )
 
         # Load BGE bridge code
         try:
@@ -342,9 +376,13 @@ try {{
             wrapped_code = bridge_code + "\n" + wrapped_user_code
 
             if self._use_worker:
-                output, error_output, success = self._worker_execute(wrapped_code, timeout=timeout)
-                log_debug("Node worker done success=%s output_len=%s has_marker=%s" % (
-                    success, len(output or ""), "___BGE_CMDS___" in (output or "")))
+                output, error_output, success = self._worker_execute(
+                    wrapped_code, timeout=timeout
+                )
+                log_debug(
+                    "Node worker done success=%s output_len=%s has_marker=%s"
+                    % (success, len(output or ""), "___BGE_CMDS___" in (output or ""))
+                )
                 return (output, error_output, success)
 
             result = subprocess.run(
@@ -356,8 +394,14 @@ try {{
 
             output = result.stdout
             error_output = result.stderr
-            log_debug("Node subprocess done returncode=%s output_len=%s has_marker=%s" % (
-                result.returncode, len(output or ""), "___BGE_CMDS___" in (output or "")))
+            log_debug(
+                "Node subprocess done returncode=%s output_len=%s has_marker=%s"
+                % (
+                    result.returncode,
+                    len(output or ""),
+                    "___BGE_CMDS___" in (output or ""),
+                )
+            )
 
             if result.returncode != 0:
                 if not error_output:
@@ -367,11 +411,16 @@ try {{
             return (output, error_output, True)
 
         except FileNotFoundError:
-            return ("", "Error: Node.js not found. Please install Node.js or configure SDK path.", False)
+            return (
+                "",
+                "Error: Node.js not found. Please install Node.js or configure SDK path.",
+                False,
+            )
         except subprocess.TimeoutExpired:
             return ("", "Error: JavaScript execution timed out.", False)
         except Exception as e:
             return ("", f"Error executing JavaScript with context: {str(e)}", False)
+
     def execute_file(self, filepath, timeout=30):
         """
         Execute a JavaScript file using Node.js.
@@ -379,11 +428,15 @@ try {{
         """
         node_path = self.get_node_path()
         if not node_path:
-            return ("", "Error: Node.js not found. Please install Node.js or configure SDK path.", False)
-        
+            return (
+                "",
+                "Error: Node.js not found. Please install Node.js or configure SDK path.",
+                False,
+            )
+
         if not os.path.exists(filepath):
             return ("", f"Error: File not found: {filepath}", False)
-        
+
         try:
             result = subprocess.run(
                 [node_path, filepath],
@@ -391,19 +444,23 @@ try {{
                 text=True,
                 timeout=timeout,
             )
-            
+
             output = result.stdout
             error_output = result.stderr
-            
+
             if result.returncode != 0:
                 if not error_output:
                     error_output = output
                 return (output, error_output, False)
-            
+
             return (output, error_output, True)
-            
+
         except FileNotFoundError:
-            return ("", "Error: Node.js not found. Please install Node.js or configure SDK path.", False)
+            return (
+                "",
+                "Error: Node.js not found. Please install Node.js or configure SDK path.",
+                False,
+            )
         except subprocess.TimeoutExpired:
             return ("", "Error: JavaScript execution timed out.", False)
         except Exception as e:

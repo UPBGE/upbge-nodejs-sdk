@@ -47,6 +47,7 @@ def get_sdk_root(context=None) -> str:
     if context is not None:
         try:
             import bpy
+
             preferences = bpy.context.preferences
             addon_prefs = preferences.addons.get("upbge_nodejs_sdk")
             if addon_prefs and hasattr(addon_prefs, "preferences"):
@@ -59,13 +60,14 @@ def get_sdk_root(context=None) -> str:
     # 3. Try to auto-detect from addon location
     try:
         # Get path: python/utils/paths.py → python/utils → python → addon root
-        addon_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        addon_path = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        )
 
         # Verify this is an SDK directory by checking for expected subdirectories
-        has_sdk_structure = (
-            os.path.isdir(os.path.join(addon_path, "python")) and
-            os.path.isdir(os.path.join(addon_path, "runtime"))
-        )
+        has_sdk_structure = os.path.isdir(
+            os.path.join(addon_path, "python")
+        ) and os.path.isdir(os.path.join(addon_path, "runtime"))
 
         if has_sdk_structure:
             return addon_path
@@ -143,7 +145,9 @@ def _find_node_windows() -> Optional[str]:
     possible_paths = [
         os.path.join(os.environ.get("ProgramFiles", ""), "nodejs", "node.exe"),
         os.path.join(os.environ.get("ProgramFiles(x86)", ""), "nodejs", "node.exe"),
-        os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "nodejs", "node.exe"),
+        os.path.join(
+            os.environ.get("LOCALAPPDATA", ""), "Programs", "nodejs", "node.exe"
+        ),
     ]
 
     for path in possible_paths:
@@ -163,10 +167,7 @@ def _find_node_unix() -> Optional[str]:
     """
     try:
         result = subprocess.run(
-            ["which", "node"],
-            capture_output=True,
-            text=True,
-            timeout=1
+            ["which", "node"], capture_output=True, text=True, timeout=1
         )
         if result.returncode == 0:
             return result.stdout.strip()

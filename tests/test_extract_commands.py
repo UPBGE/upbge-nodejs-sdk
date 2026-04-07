@@ -12,7 +12,7 @@ import sys
 import os
 
 # Adicionar diretório python ao path para imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'python'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "python"))
 
 from game_engine.script_handler import _extract_commands
 

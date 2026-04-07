@@ -232,9 +232,7 @@ def build_context():
                     scene = getattr(owner, "scene", None)
                     if scene is not None:
                         ac = getattr(scene, "active_camera", None)
-                        ctx["active_camera_name"] = (
-                            ac.name if ac is not None else None
-                        )
+                        ctx["active_camera_name"] = ac.name if ac is not None else None
             except Exception:
                 ctx["active_camera_name"] = None
         except Exception:
@@ -296,7 +294,8 @@ def build_context():
                     if hit_list is not None:
                         try:
                             sentry["hitObjectList"] = [
-                                {"name": getattr(o, "name", str(i))} for i, o in enumerate(hit_list)
+                                {"name": getattr(o, "name", str(i))}
+                                for i, o in enumerate(hit_list)
                             ]
                         except Exception:
                             sentry["hitObjectList"] = []
@@ -307,7 +306,8 @@ def build_context():
                             hit_list = getattr(sensor, "hit_object_list", None)
                             if hit_list is not None:
                                 sentry["hitObjectList"] = [
-                                    {"name": getattr(o, "name", str(i))} for i, o in enumerate(hit_list)
+                                    {"name": getattr(o, "name", str(i))}
+                                    for i, o in enumerate(hit_list)
                                 ]
                             else:
                                 sentry["hitObjectList"] = []
@@ -327,9 +327,13 @@ def build_context():
                                     if getattr(evt, "active", False):
                                         events_list.append([int(keycode), int(ACTIVE)])
                                     if getattr(evt, "activated", False):
-                                        events_list.append([int(keycode), int(JUST_ACTIVATED)])
+                                        events_list.append(
+                                            [int(keycode), int(JUST_ACTIVATED)]
+                                        )
                                     if getattr(evt, "released", False):
-                                        events_list.append([int(keycode), int(JUST_RELEASED)])
+                                        events_list.append(
+                                            [int(keycode), int(JUST_RELEASED)]
+                                        )
                                 except Exception:
                                     continue
                         if events_list:
@@ -343,7 +347,9 @@ def build_context():
                                         try:
                                             st = get_status(kc)
                                             if st is not None and st != 0:
-                                                events_list.append([int(kc), int(ACTIVE)])
+                                                events_list.append(
+                                                    [int(kc), int(ACTIVE)]
+                                                )
                                         except Exception:
                                             pass
                                     if events_list:
@@ -353,13 +359,18 @@ def build_context():
 
                     # Mouse: position, pressed, wheelDelta
                     try:
-                        if "Mouse" in type(sensor).__name__ or getattr(sensor, "type", 0) == 12:
+                        if (
+                            "Mouse" in type(sensor).__name__
+                            or getattr(sensor, "type", 0) == 12
+                        ):
                             pos = getattr(sensor, "position", None)
                             if pos is not None:
                                 sentry["position"] = [int(pos[0]), int(pos[1])]
                             but = getattr(sensor, "getButtonStatus", None)
                             if but is not None and callable(but):
-                                sentry["pressed"] = [btn for btn in (1, 2, 4) if but(btn)]
+                                sentry["pressed"] = [
+                                    btn for btn in (1, 2, 4) if but(btn)
+                                ]
                             wheel = getattr(sensor, "wheel", None)
                             if wheel is not None:
                                 sentry["wheelDelta"] = int(wheel)
@@ -368,15 +379,21 @@ def build_context():
 
                     # Joystick: index, buttonsPressed, axisValues
                     try:
-                        if "Joystick" in type(sensor).__name__ or getattr(sensor, "type", 0) == 13:
+                        if (
+                            "Joystick" in type(sensor).__name__
+                            or getattr(sensor, "type", 0) == 13
+                        ):
                             sentry["index"] = getattr(sensor, "index", 0)
                             buts = getattr(sensor, "getButtonStatus", None)
                             if buts is not None and callable(buts):
-                                sentry["buttonsPressed"] = [i for i in range(32) if buts(i)]
+                                sentry["buttonsPressed"] = [
+                                    i for i in range(32) if buts(i)
+                                ]
                             ax = getattr(sensor, "axisValues", None)
                             if ax is not None:
                                 sentry["axisValues"] = [
-                                    float(ax[i]) if i < len(ax) else 0.0 for i in range(4)
+                                    float(ax[i]) if i < len(ax) else 0.0
+                                    for i in range(4)
                                 ]
                     except Exception:
                         pass
@@ -403,7 +420,10 @@ def build_context():
 
                     # Mouse sensor: position, buttons, wheel
                     try:
-                        if "Mouse" in type(sensor).__name__ or getattr(sensor, "type", 0) == 12:
+                        if (
+                            "Mouse" in type(sensor).__name__
+                            or getattr(sensor, "type", 0) == 12
+                        ):
                             pos = getattr(sensor, "position", None)
                             if pos is not None:
                                 mouse_ctx["position"] = [int(pos[0]), int(pos[1])]
@@ -421,7 +441,10 @@ def build_context():
 
                     # Joystick sensor
                     try:
-                        if "Joystick" in type(sensor).__name__ or getattr(sensor, "type", 0) == 13:
+                        if (
+                            "Joystick" in type(sensor).__name__
+                            or getattr(sensor, "type", 0) == 13
+                        ):
                             joy_ctx["count"] = max(joy_ctx["count"], 1)
                             idx = str(getattr(sensor, "index", 0))
                             buts = getattr(sensor, "getButtonStatus", None)
@@ -432,7 +455,8 @@ def build_context():
                             ax = getattr(sensor, "axisValues", None)
                             if ax is not None:
                                 joy_ctx["axes"][idx] = [
-                                    float(ax[i]) if i < len(ax) else 0.0 for i in range(4)
+                                    float(ax[i]) if i < len(ax) else 0.0
+                                    for i in range(4)
                                 ]
                     except Exception:
                         pass

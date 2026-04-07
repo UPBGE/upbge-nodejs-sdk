@@ -135,12 +135,12 @@ except Exception as e:
 def create_wrapper_script(script_name):
     """Create or update a text block with the wrapper script for a specific script."""
     # Sanitize script name for wrapper name
-    safe_name = script_name.replace('.', '_').replace('-', '_')
+    safe_name = script_name.replace(".", "_").replace("-", "_")
     wrapper_name = f"__js_wrapper_{safe_name}__"
-    
+
     # Generate wrapper code with script name (always use latest template)
     wrapper_code = WRAPPER_CODE_TEMPLATE.format(script_name=script_name)
-    
+
     if wrapper_name in bpy.data.texts:
         wrapper = bpy.data.texts[wrapper_name]
         wrapper.from_string(wrapper_code)
@@ -148,29 +148,29 @@ def create_wrapper_script(script_name):
         wrapper = bpy.data.texts.new(wrapper_name)
         wrapper.from_string(wrapper_code)
         wrapper.filepath = ""  # Internal script
-    
+
     return wrapper
 
 
 def assign_wrapper_to_controller(controller):
     """Assign the wrapper script to a controller that has a .js file."""
-    if not controller or controller.type != 'PYTHON':
+    if not controller or controller.type != "PYTHON":
         return False
-    
+
     if not controller.text:
         return False
-    
+
     script_name = controller.text.name
-    if not (script_name.endswith(('.js', '.mjs'))):
+    if not (script_name.endswith((".js", ".mjs"))):
         return False
-    
+
     # Create wrapper with reference to the original script
     wrapper = create_wrapper_script(script_name)
-    
+
     # Store reference to original script (we'll keep it accessible)
     # The wrapper will look up the script by name from bpy.data.texts
-    
+
     # Assign wrapper to controller
     controller.text = wrapper
-    
+
     return True

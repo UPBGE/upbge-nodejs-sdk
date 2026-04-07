@@ -4,6 +4,4 @@
 
 """Runtime JavaScript execution modules."""
 
-__all__ = (
-    "nodejs",
-)
+__all__ = ("nodejs",)

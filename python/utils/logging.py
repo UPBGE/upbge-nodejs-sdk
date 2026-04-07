@@ -11,7 +11,6 @@ import logging
 import os
 import sys
 
-
 # Environment variables to control logging
 # UPBGE_JS_DEBUG=1        -> Enable debug logs
 # UPBGE_JS_LOG_LEVEL=INFO -> Set log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
