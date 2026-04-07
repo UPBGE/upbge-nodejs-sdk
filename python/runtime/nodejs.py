@@ -13,16 +13,9 @@ try:
 except ImportError:
     bpy = None
 
-# Import centralized path utilities
+# Import centralized utilities
 from utils.paths import get_sdk_root, get_node_executable
-
-# Set to False to disable Node runtime flow logs
-DEBUG_NODE_LOGS = True
-
-
-def _node_log(msg):
-    if DEBUG_NODE_LOGS:
-        print("[UPBGE-JS] " + msg)
+from utils.logging import debug as log_debug
 
 
 def get_sdk_path():
@@ -293,7 +286,7 @@ try {{
         import json
 
         node_path = self.get_node_path()
-        _node_log("Node execute_with_context code_len=%s node_path=%s" % (len(code or ""), node_path or "NOT FOUND"))
+        log_debug("Node execute_with_context code_len=%s node_path=%s" % (len(code or ""), node_path or "NOT FOUND"))
         if not node_path:
             return ("", "Error: Node.js not found. Please install Node.js or configure SDK path.", False)
 
@@ -350,7 +343,7 @@ try {{
 
             if self._use_worker:
                 output, error_output, success = self._worker_execute(wrapped_code, timeout=timeout)
-                _node_log("Node worker done success=%s output_len=%s has_marker=%s" % (
+                log_debug("Node worker done success=%s output_len=%s has_marker=%s" % (
                     success, len(output or ""), "___BGE_CMDS___" in (output or "")))
                 return (output, error_output, success)
 
@@ -363,7 +356,7 @@ try {{
 
             output = result.stdout
             error_output = result.stderr
-            _node_log("Node subprocess done returncode=%s output_len=%s has_marker=%s" % (
+            log_debug("Node subprocess done returncode=%s output_len=%s has_marker=%s" % (
                 result.returncode, len(output or ""), "___BGE_CMDS___" in (output or "")))
 
             if result.returncode != 0:
