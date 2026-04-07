@@ -12,13 +12,19 @@ Uso:
 
 import os
 import sys
-import platform
 import urllib.request
 import zipfile
 import tarfile
 import shutil
 import argparse
 from pathlib import Path
+
+# Import centralized platform detection
+sys.path.insert(0, str(Path(__file__).parent.parent / "python"))
+try:
+    from utils.paths import get_platform as detect_platform
+except ImportError:
+    detect_platform = None
 
 # URLs base para downloads
 NODEJS_BASE_URL = "https://nodejs.org/dist"
@@ -48,8 +54,21 @@ PLATFORM_CONFIGS = {
 
 
 def get_platform():
-    """Detecta a plataforma atual."""
-    system = platform.system()
+    """Detecta a plataforma atual (uses centralized detection)."""
+    # Use centralized detection if available
+    if detect_platform:
+        platform_name = detect_platform()
+        # Convert to download script format
+        if platform_name == 'Windows':
+            return "windows"
+        elif platform_name == 'Linux':
+            return "linux"
+        elif platform_name == 'Darwin':
+            return "macos"
+
+    # Fallback to manual detection
+    import platform as platform_module
+    system = platform_module.system()
     if system == "Windows":
         return "windows"
     elif system == "Linux":

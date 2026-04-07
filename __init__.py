@@ -48,10 +48,12 @@ update_error_msg = ''
 
 
 def get_os():
-    s = platform.system()
-    if s == 'Windows':
+    """Get OS type (win/mac/linux). Uses centralized platform detection."""
+    from python.utils.paths import get_platform
+    platform_name = get_platform()
+    if platform_name == 'Windows':
         return 'win'
-    elif s == 'Darwin':
+    elif platform_name == 'Darwin':
         return 'mac'
     else:
         return 'linux'
@@ -132,49 +134,35 @@ def same_path(path1: str, path2: str) -> bool:
 
 def get_sdk_path(context: bpy.context) -> str:
     """Returns the absolute path of the currently set SDK.
-    
-    The path is read from the following sources in that priority:
-        1. Environment variable 'BGE_JAVASCRIPT_SDK' (must be an absolute path)
-        2. Local SDK in ./bge_js_sdk relative to the current file
-        3. The SDK path specified in the add-on preferences
-        4. Auto-detect: if add-on directory has SDK structure, use it
+
+    Uses centralized path resolution from utils.paths module.
+    Tracks SDK source for diagnostics (PREFS, LOCAL, or ENV_VAR).
     """
     global sdk_source
+    from python.utils.paths import get_sdk_root
 
-    sdk_envvar = os.environ.get('BGE_JAVASCRIPT_SDK')
-    if sdk_envvar is not None and os.path.isabs(sdk_envvar) and os.path.isdir(sdk_envvar) and os.path.exists(sdk_envvar):
+    # Determine source by checking what get_sdk_root() used
+    sdk_envvar = os.environ.get('UPBGE_SDK_PATH')
+    if sdk_envvar:
         sdk_source = SDKSource.ENV_VAR
-        return sdk_envvar
-
-    fp = get_fp()
-    if fp != '':  # blend file is saved
-        local_sdk = os.path.join(fp, 'bge_js_sdk')
-        if os.path.exists(local_sdk):
+    else:
+        fp = get_fp()
+        if fp != '' and os.path.exists(os.path.join(fp, 'bge_js_sdk')):
             sdk_source = SDKSource.LOCAL
-            return local_sdk
+        else:
+            sdk_source = SDKSource.PREFS
 
-    sdk_source = SDKSource.PREFS
-    preferences = context.preferences
-    addon_prefs = preferences.addons["upbge_nodejs_sdk"].preferences
-    
-    # If SDK path is set in preferences, use it
-    if addon_prefs.sdk_path:
-        return addon_prefs.sdk_path
-    
-    # Auto-detect: check if add-on directory itself is the SDK (when installed via ZIP)
-    addon_path = os.path.dirname(os.path.abspath(__file__))
-    has_sdk_structure = (
-        os.path.exists(os.path.join(addon_path, "python")) and
-        os.path.exists(os.path.join(addon_path, "runtime"))
-    )
-    
-    if has_sdk_structure:
-        # Auto-set the SDK path to the add-on directory
-        addon_prefs.sdk_path = addon_path
-        print(f"UPBGE JavaScript SDK: Auto-detected SDK path (add-on directory): {addon_path}")
-        return addon_path
-    
-    return ""
+    # Get SDK path using centralized function
+    sdk_path = get_sdk_root(context=context)
+
+    # Auto-set preferences if not already set
+    if sdk_path and not context.preferences.addons["upbge_nodejs_sdk"].preferences.sdk_path:
+        try:
+            context.preferences.addons["upbge_nodejs_sdk"].preferences.sdk_path = sdk_path
+        except Exception:
+            pass
+
+    return sdk_path or ""
 
 
 def start_sdk(sdk_path: str):

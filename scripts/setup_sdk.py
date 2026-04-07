@@ -13,6 +13,14 @@ import sys
 import subprocess
 from pathlib import Path
 
+# Import centralized path utilities
+sys.path.insert(0, str(Path(__file__).parent.parent / "python"))
+try:
+    from utils.paths import get_platform as detect_platform, get_node_executable
+except ImportError:
+    get_node_executable = None
+    detect_platform = None
+
 def create_directory_structure():
     """Cria a estrutura de diretórios necessária."""
     base_dir = Path(__file__).parent.parent
@@ -33,8 +41,19 @@ def create_directory_structure():
     print("\nEstrutura de diretórios criada com sucesso!")
 
 
-def get_node_path(base_dir):
-    """Retorna o caminho do Node.js para a plataforma atual."""
+def get_node_path(base_dir=None):
+    """Retorna o caminho do Node.js para a plataforma atual.
+
+    Uses centralized path resolution. If base_dir not provided,
+    uses SDK root directory.
+    """
+    if get_node_executable:
+        return get_node_executable()
+
+    # Fallback: manual detection
+    if base_dir is None:
+        base_dir = Path(__file__).parent.parent
+
     platform = sys.platform
     if platform == "win32":
         return base_dir / "runtime" / "windows" / "node.exe"
